@@ -5,7 +5,7 @@ import com.cloudinary.utils.ObjectUtils;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.niit_project.backend.dto.ApiResponse;
 import org.niit_project.backend.entities.Admin;
-import org.niit_project.backend.service.UserService;
+import org.niit_project.backend.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,13 +17,13 @@ import org.springframework.web.multipart.MultipartFile;
 public class AdminController {
 
     @Autowired
-    private UserService userService;
+    private AdminService adminService;
 
 
     @GetMapping("/getOneAdmin/{id}")
     public ResponseEntity<ApiResponse> getOneAdmin(@PathVariable String id){
         var response = new ApiResponse();
-        var gottenAdmin = userService.getAdmin(id);
+        var gottenAdmin = adminService.getAdmin(id);
 
         if(gottenAdmin.isEmpty()){
             response.setMessage("Admin doesn't exist");
@@ -37,7 +37,7 @@ public class AdminController {
 
     @GetMapping("/getAllAdmins")
     public ResponseEntity<ApiResponse> getAllAdmins(){
-        var allAdmins = userService.getAllAdmins();
+        var allAdmins = adminService.getAllAdmins();
 
         if(allAdmins.isPresent()){
             var response = new ApiResponse();
@@ -56,7 +56,7 @@ public class AdminController {
     public ResponseEntity<ApiResponse> updateAdmin(@PathVariable String id, @RequestBody Admin admin){
         // In this endpoint, we're not editing the email or phone number
 
-        var gottenAdmin = userService.getAdmin(id);
+        var gottenAdmin = adminService.getAdmin(id);
 
         if(gottenAdmin.isEmpty()){
             var response = new ApiResponse();
@@ -64,7 +64,7 @@ public class AdminController {
             return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
 
-        var editedAdmin = userService.updateAdmin(id, admin);
+        var editedAdmin = adminService.updateAdmin(id, admin);
 
         if(editedAdmin.isEmpty()){
             var response = new ApiResponse();
@@ -82,7 +82,7 @@ public class AdminController {
     @PatchMapping(value = "/uploadAdminProfile/{id}", consumes = "multipart/form-data")
     public ResponseEntity<ApiResponse> updateProfile(@PathVariable String id, @RequestPart("file") MultipartFile file){
         var response = new ApiResponse();
-        var gottenAdmin = userService.getAdmin(id);
+        var gottenAdmin = adminService.getAdmin(id);
 
         if(gottenAdmin.isEmpty()){
             response.setMessage("Admin doesn't exist");
@@ -115,7 +115,7 @@ public class AdminController {
                 return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
             }
 
-            var updatedAdminExists = userService.updateAdminProfile(id, secure_url.toString().trim());
+            var updatedAdminExists = adminService.updateAdminProfile(id, secure_url.toString().trim());
 
             if(updatedAdminExists.isEmpty()){
                 response.setMessage("Error updating admin profile photo");

@@ -4,15 +4,13 @@ import jakarta.validation.Valid;
 import org.niit_project.backend.dto.ApiResponse;
 import org.niit_project.backend.entities.Admin;
 import org.niit_project.backend.repository.AdminRepository;
-import org.niit_project.backend.service.UserService;
+import org.niit_project.backend.service.AdminService;
 import org.niit_project.backend.utils.PhoneNumberConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import java.util.HashMap;
-import java.util.Map;
 
 import java.util.Optional;
 
@@ -25,7 +23,7 @@ public class AuthController {
     private AdminRepository adminRepository;
 
     @Autowired
-    private UserService userService;
+    private AdminService adminService;
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse>signUp(@Valid @RequestBody Admin admin){
@@ -77,7 +75,7 @@ public class AuthController {
         }
 
 
-        final Optional<Admin> createdUser = userService.registerUser(admin);
+        final Optional<Admin> createdUser = adminService.registerUser(admin);
 
         if(createdUser.isPresent()){
             final Admin gottenAdmin = createdUser.get();
@@ -104,7 +102,7 @@ public class AuthController {
 
         Admin user;
         try {
-            user = userService.login(admin);
+            user = adminService.login(admin);
             response.setMessage("Successfully Logged In as " + user.getFullName());
             response.setData(user);
             return new ResponseEntity<>(response, HttpStatus.OK);

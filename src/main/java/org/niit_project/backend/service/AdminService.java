@@ -4,17 +4,15 @@ import jakarta.validation.Valid;
 import org.niit_project.backend.entities.Admin;
 import org.niit_project.backend.repository.AdminRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
 @Service
-public class UserService {
+public class AdminService {
     @Autowired
     private AdminRepository userRepository;
 
@@ -114,6 +112,7 @@ public class UserService {
         }
 
         var queriedAdmin = gottenAdmin.get();
+
         queriedAdmin.setProfile(url);
 
 
