@@ -16,13 +16,15 @@ public class Channel {
 
     private String channelName;
 
+    private String channelDescription;
+
     private String channelProfile;
 
     private String creator;
 
     private LocalDateTime createdAt;
 
-    private List<String> members;
+    private List<Object> members;
 
     private ChannelType channelType;
 
@@ -54,11 +56,19 @@ public class Channel {
         this.id = id;
     }
 
-    public List<String> getMembers() {
+    public String getChannelDescription() {
+        return channelDescription;
+    }
+
+    public void setChannelDescription(String channelDescription) {
+        this.channelDescription = channelDescription;
+    }
+
+    public List<Object> getMembers() {
         return members;
     }
 
-    public void setMembers(List<String> members) {
+    public void setMembers(List<Object> members) {
         this.members = members;
     }
 

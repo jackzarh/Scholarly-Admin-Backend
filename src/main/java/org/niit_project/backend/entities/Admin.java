@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 
 @Document(collection = "admins")
 @Data
-public abstract class Admin {
+public class Admin {
     @Id
     private String id;
 
