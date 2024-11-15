@@ -1,10 +1,15 @@
 package org.niit_project.backend.controller;
 
-import org.niit_project.backend.model.User;
+import jakarta.validation.Valid;
+import org.niit_project.backend.dto.ApiResponse;
+import org.niit_project.backend.entities.Admin;
+import org.niit_project.backend.repository.AdminRepository;
 import org.niit_project.backend.service.UserService;
+import org.niit_project.backend.utils.PhoneNumberConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
@@ -12,26 +17,100 @@ import java.util.Map;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("scholarly/api/v1/auth")
+@Validated
 public class AuthController {
+
+    @Autowired
+    private AdminRepository adminRepository;
 
     @Autowired
     private UserService userService;
 
     @PostMapping("/register")
-    protected ResponseEntity<User>signUp(@RequestBody User user){
-        return new ResponseEntity<>(userService.registerUser(user), HttpStatus.OK);
+    public ResponseEntity<ApiResponse>signUp(@Valid @RequestBody Admin admin){
+
+        // Null checks
+        if(admin.getEmail() == null){
+            var response = new ApiResponse();
+            response.setMessage("Email cannot be null");
+            return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+        }
+        if(admin.getPhoneNumber() == null){
+            var response = new ApiResponse();
+            response.setMessage("Phone Number cannot be null");
+            return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+        }
+        if(admin.getFirstName() == null){
+            var response = new ApiResponse();
+            response.setMessage("First Name cannot be null");
+            return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+        }
+        if(admin.getLastName() == null){
+            var response = new ApiResponse();
+            response.setMessage("Last Name cannot be null");
+            return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+        }
+        if(admin.getRole() == null){
+            var response = new ApiResponse();
+            response.setMessage("Role cannot be null");
+            return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+        }
+        if(admin.getPassword() == null){
+            var response = new ApiResponse();
+            response.setMessage("Password cannot be null");
+            return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+        }
+
+        // Just to convert the phone number properly
+        // To +234 format
+        admin.setPhoneNumber(PhoneNumberConverter.convertToFull(admin.getPhoneNumber()));
+
+        /// To make sure that you're not trying to register with an email
+        /// Or phone number that already exists
+        var gottenEmail = adminRepository.findByEmail(admin.getEmail());
+        var gottenPhoneNumber = adminRepository.findByPhoneNumber(admin.getPhoneNumber());
+        if(gottenEmail.isPresent() || gottenPhoneNumber.isPresent()){
+            var response = new ApiResponse();
+            response.setMessage(gottenEmail.isPresent()? "email already exists":"phone number already exists");
+            return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+        }
+
+
+        final Optional<Admin> createdUser = userService.registerUser(admin);
+
+        if(createdUser.isPresent()){
+            final Admin gottenAdmin = createdUser.get();
+            final ApiResponse response = new ApiResponse();
+            response.setMessage("Registered " + gottenAdmin.getFirstName() + " Successfully");
+            response.setData(gottenAdmin);
+            return new ResponseEntity<ApiResponse>(response, HttpStatus.OK);
+        }
+
+        final ApiResponse response = new ApiResponse();
+        response.setMessage("Error creating user");
+        return new ResponseEntity<ApiResponse>(response, HttpStatus.NOT_FOUND);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody User loginRequest) {
-        Optional<User> user = userService.login(loginRequest.getUsername(), loginRequest.getPassword());
-        if (user.isPresent()) {
-            return ResponseEntity.ok(user.get());
-        } else {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Invalid credentials");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+    public ResponseEntity<ApiResponse> login(@RequestBody Admin admin) {
+        final ApiResponse response = new ApiResponse();
+
+        // Just to convert the phone number properly
+        // To +234 format
+        if(admin.getPhoneNumber() != null){
+            admin.setPhoneNumber(PhoneNumberConverter.convertToFull(admin.getPhoneNumber()));
+        }
+
+        Admin user;
+        try {
+            user = userService.login(admin);
+            response.setMessage("Successfully Logged In as " + user.getFullName());
+            response.setData(user);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            response.setMessage(e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
     }
 

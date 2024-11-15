@@ -14,8 +14,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
-public class
-SecurityConfig {
+public class SecurityConfig {
     @Bean
     protected SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
         http
@@ -43,7 +42,7 @@ SecurityConfig {
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder(){ return new BCryptPasswordEncoder();
+    public BCryptPasswordEncoder passwordEncoder(){ return new BCryptPasswordEncoder();
     }
 }
 

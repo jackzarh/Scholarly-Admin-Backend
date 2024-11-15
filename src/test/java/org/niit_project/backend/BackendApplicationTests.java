@@ -1,14 +1,11 @@
 package org.niit_project.backend;
 
 import org.junit.jupiter.api.Test;
-import org.niit_project.backend.model.User;
+import org.niit_project.backend.entities.Admin;
 import org.springframework.boot.test.context.SpringBootTest;
 import static org.assertj.core.api.Assertions.assertThat;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -21,24 +18,24 @@ public class BackendApplicationTests {
 
 	@Test
 	public void testSignup() {
-		User newUser = new User();
-		newUser.setUsername("newuser");
-		newUser.setPassword("newpass");
-		newUser.setEmail("newuser@example.com");
+		Admin newAdmin = new Admin();
+		newAdmin.setFirstName("newuser");
+		newAdmin.setPassword("newpass");
+		newAdmin.setEmail("newuser@example.com");
 
-		ResponseEntity<User> response = restTemplate.postForEntity("/auth/signup", newUser, User.class);
+		ResponseEntity<Admin> response = restTemplate.postForEntity("/auth/signup", newAdmin, Admin.class);
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 		assertThat(response.getBody()).isNotNull();
-		assertThat(response.getBody().getUsername()).isEqualTo("newuser");
+		assertThat(response.getBody().getFirstName()).isEqualTo("newuser");
 	}
 
 	@Test
 	public void testLogin() {
-		User loginRequest = new User();
-		loginRequest.setUsername("testuser");
+		Admin loginRequest = new Admin();
+		loginRequest.setFirstName("testuser");
 		loginRequest.setPassword("password123");
 
-		ResponseEntity<User> response = restTemplate.postForEntity("/auth/login", loginRequest, User.class);
+		ResponseEntity<Admin> response = restTemplate.postForEntity("/auth/login", loginRequest, Admin.class);
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 	}
 }
