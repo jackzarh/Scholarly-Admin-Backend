@@ -20,7 +20,7 @@ public class Channel {
 
     private String channelProfile;
 
-    private String creator;
+    private Object creator;
 
     private LocalDateTime createdAt;
 
@@ -88,11 +88,11 @@ public class Channel {
         this.createdAt = createdAt;
     }
 
-    public String getCreator() {
+    public Object getCreator() {
         return creator;
     }
 
-    public void setCreator(String creator) {
+    public void setCreator(Object creator) {
         this.creator = creator;
     }
 

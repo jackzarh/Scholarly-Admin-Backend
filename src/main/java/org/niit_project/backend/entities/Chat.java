@@ -15,14 +15,17 @@ public class Chat {
 
     private String senderId;
     private String senderProfile;
+    private String channelId;
 
     private String message;
     private String attachment;
 
     private AttachmentType attachmentType;
 
+    private MessageType messageType;
+
     private LocalDateTime timestamp;
-    private List<String> readReceipt;
+    private List<Object> readReceipt;
 
     public String getId() {
         return id;
@@ -30,6 +33,22 @@ public class Chat {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getChannelId() {
+        return channelId;
+    }
+
+    public void setChannelId(String channelId) {
+        this.channelId = channelId;
+    }
+
+    public MessageType getMessageType() {
+        return messageType;
+    }
+
+    public void setMessageType(MessageType messageType) {
+        this.messageType = messageType;
     }
 
     public String getSenderId() {
@@ -80,11 +99,11 @@ public class Chat {
         this.timestamp = timestamp;
     }
 
-    public List<String> getReadReceipt() {
+    public List<Object> getReadReceipt() {
         return readReceipt;
     }
 
-    public void setReadReceipt(List<String> readReceipt) {
+    public void setReadReceipt(List<Object> readReceipt) {
         this.readReceipt = readReceipt;
     }
 }

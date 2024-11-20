@@ -19,6 +19,7 @@ public class SecurityConfig {
     protected SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
         http
                 .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/ws/**").permitAll()
                         .anyRequest().permitAll()
                 )
                 .csrf(csrf -> csrf.disable())

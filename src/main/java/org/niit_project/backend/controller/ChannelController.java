@@ -184,4 +184,39 @@ public class ChannelController {
         }
     }
 
+    @PatchMapping("/addMember/{channelId}/{memberId}")
+    public ResponseEntity<ApiResponse> addMemberToChannel(@PathVariable String channelId, @PathVariable String memberId){
+        var apiResponse = new ApiResponse();
+
+        try{
+            var member = channelService.addMember(memberId, channelId);
+            apiResponse.setMessage("Added " + member.getFirstName() + " successfully");
+            apiResponse.setData(member);
+
+            return new ResponseEntity<>(apiResponse, HttpStatus.OK);
+
+        } catch (Exception e) {
+            apiResponse.setMessage(e.getMessage());
+            return new ResponseEntity<>(apiResponse, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PatchMapping("/removeMember/{channelId}/{memberId}")
+    public ResponseEntity<ApiResponse> removeMemberFromChannel(@PathVariable String channelId, @PathVariable String memberId){
+        var apiResponse = new ApiResponse();
+
+        try{
+            var memberRemoved = channelService.removeMember(memberId, channelId);
+            apiResponse.setMessage("Removed User Successfully");
+            apiResponse.setData(memberRemoved);
+
+            return new ResponseEntity<>(apiResponse, HttpStatus.OK);
+
+        } catch (Exception e) {
+            apiResponse.setMessage(e.getMessage());
+            return new ResponseEntity<>(apiResponse, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+
 }
