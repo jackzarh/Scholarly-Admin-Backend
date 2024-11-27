@@ -5,6 +5,7 @@ import org.niit_project.backend.entities.*;
 import org.niit_project.backend.repository.ChannelRepository;
 import org.niit_project.backend.repository.ChatRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -49,10 +50,10 @@ public class ChannelService {
     }
 
     public List<Channel> getAdminChannels(String adminId){
-        var allChannels = channelRepository.findAll();
 
         var matchAggregation = Aggregation.match(Criteria.where("members").in(adminId));
-        var aggregation = Aggregation.newAggregation(matchAggregation);
+        var sortAggregation = Aggregation.sort(Sort.by(Sort.Direction.DESC, "createdAt"));
+        var aggregation = Aggregation.newAggregation(matchAggregation, sortAggregation);
 
         var results = mongoTemplate.aggregate(aggregation, "channels", Channel.class).getMappedResults();
         var formed = results.stream().peek(channel -> {
@@ -61,7 +62,9 @@ public class ChannelService {
             channel.setLatestMessage(chatService.getLastChat(channel.getId()).orElse(null));
             channel.setUnreadMessages(chatService.getUnseenChatsCount(channel.getId(), adminId).orElse(0));
         }).toList();
-        return formed;
+        var sorted = formed.stream().sorted((channel1, channel2) -> (channel2.getLatestMessage() != null ? channel2.getLatestMessage().getTimestamp() : channel2.getCreatedAt()).compareTo((channel1.getLatestMessage() != null? channel1.getLatestMessage().getTimestamp(): channel1.getCreatedAt()))).toList();
+
+        return sorted;
     }
 
     // WARNING: Should be used if robust details concerning channel is needed !!

@@ -93,7 +93,8 @@ public class ChatService {
 
         /// Normal Chat Aggregation Pipelines
         var matchPipeline = Aggregation.match(Criteria.where("channelId").is(channelId));
-        var aggregation = Aggregation.newAggregation(matchPipeline);
+        var sortPipeline = Aggregation.sort(Sort.by("timestamp"));
+        var aggregation = Aggregation.newAggregation(matchPipeline, sortPipeline);
 
         /// Aggregation To get View Receipt as Members
         var members = getChannel.get().getMembers().stream().map(Object::toString).toList();

@@ -1,7 +1,7 @@
 package org.niit_project.backend.entities;
 
 public class Member {
-    public enum MemberRole{admin, student}
+    public enum MemberRole {admin, student}
     private String id;
     private String firstName, lastName;
     private MemberRole role;
