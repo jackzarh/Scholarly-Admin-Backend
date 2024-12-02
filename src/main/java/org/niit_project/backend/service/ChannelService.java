@@ -165,11 +165,14 @@ public class ChannelService {
         var chatsResponse = new ApiResponse("User was added", createdChat);
         messagingTemplate.convertAndSend("/chats/" + channelId, chatsResponse);
 
-        savedChannel.setLatestMessage(createdChat);
-        var updatedChannelResponse = new ApiResponse("Member Added", savedChannel);
         // We're going to broadcast the information to all the members
         var membersId = savedChannel.getMembers().stream().map(Object::toString).toList();
         for(String memberId : membersId){
+            savedChannel.setUnreadMessages(chatService.getUnseenChatsCount(channelId, memberId).orElse(0));
+            savedChannel.setLatestMessage(createdChat);
+            var updatedChannelResponse = new ApiResponse("Member Added", savedChannel);
+
+
             messagingTemplate.convertAndSend("/channels/" + memberId, updatedChannelResponse);
         }
 
@@ -227,11 +230,13 @@ public class ChannelService {
         var chatsResponse = new ApiResponse("User was removed", createdChat);
         messagingTemplate.convertAndSend("/chats/" + channelId, chatsResponse);
 
-        savedChannel.setLatestMessage(createdChat);
-        var updatedChannelResponse = new ApiResponse("Member Removed", savedChannel);
         // We're going to broadcast the information to all the members
         var membersId = savedChannel.getMembers().stream().map(Object::toString).toList();
         for(String memberId : membersId){
+            savedChannel.setUnreadMessages(chatService.getUnseenChatsCount(channelId, memberId).orElse(0));
+            savedChannel.setLatestMessage(createdChat);
+            var updatedChannelResponse = new ApiResponse("Member Removed", savedChannel);
+
             messagingTemplate.convertAndSend("/channels/" + memberId, updatedChannelResponse);
         }
 
@@ -278,6 +283,7 @@ public class ChannelService {
             /// To update the websocket that a new chat has been added
             var chatsResponse = new ApiResponse("Channel Created", createdChat);
             messagingTemplate.convertAndSend("/chats/" + createdChannel.getId(), chatsResponse);
+
 
             createdChannel.setLatestMessage(createdChat);
             var createdChannelResponse = new ApiResponse("Channel Created Successfully", createdChannel);
@@ -329,11 +335,13 @@ public class ChannelService {
         messagingTemplate.convertAndSend("/chats/" + savedChannel.getId(), chatsResponse);
 
 
-        savedChannel.setLatestMessage(createdChat);
-        var updatedChannelResponse = new ApiResponse("Channel Updated", savedChannel);
+
         // We're going to broadcast the information to all the members
         var membersId = savedChannel.getMembers().stream().map(Object::toString).toList();
         for(String memberId : membersId){
+            savedChannel.setUnreadMessages(chatService.getUnseenChatsCount(channelId, memberId).orElse(0));
+            savedChannel.setLatestMessage(createdChat);
+            var updatedChannelResponse = new ApiResponse("Channel Updated", savedChannel);
             messagingTemplate.convertAndSend("/channels/" + memberId, updatedChannelResponse);
         }
 
@@ -377,12 +385,12 @@ public class ChannelService {
         var chatsResponse = new ApiResponse("Channel Photo Updated", savedChat);
         messagingTemplate.convertAndSend("/chats/" + channelId, chatsResponse);
 
-        savedChannel.setLatestMessage(savedChat);
-        var updatedChannelResponse = new ApiResponse("Channel Photo Updated", savedChannel);
-
         // We're going to broadcast the information to all the members
         var members = channel.getMembers().stream().map(Object::toString).toList();
         for(String member : members){
+            savedChannel.setUnreadMessages(chatService.getUnseenChatsCount(channelId, member).orElse(0));
+            savedChannel.setLatestMessage(savedChat);
+            var updatedChannelResponse = new ApiResponse("Channel Photo Updated", savedChannel);
             messagingTemplate.convertAndSend("/channels/" + member, updatedChannelResponse);
         }
 
