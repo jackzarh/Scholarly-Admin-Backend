@@ -147,7 +147,7 @@ public class ChannelService {
         /// We then update the members/add the member
         /// And save it in the repository
         gottenChannel.setMembers(List.of(gottenChannel.getMembers(), member.getId()));
-        channelRepository.save(gottenChannel);
+        var savedChannel = channelRepository.save(gottenChannel);
 
         // If the user/admin was added. We want to send a chat indicating
         // That the added was added
@@ -165,6 +165,13 @@ public class ChannelService {
         var chatsResponse = new ApiResponse("User was added", createdChat);
         messagingTemplate.convertAndSend("/chats/" + channelId, chatsResponse);
 
+        savedChannel.setLatestMessage(createdChat);
+        var updatedChannelResponse = new ApiResponse("Member Added", savedChannel);
+        // We're going to broadcast the information to all the members
+        var membersId = savedChannel.getMembers().stream().map(Object::toString).toList();
+        for(String memberId : membersId){
+            messagingTemplate.convertAndSend("/channels/" + memberId, updatedChannelResponse);
+        }
 
         return member;
     }
@@ -200,7 +207,7 @@ public class ChannelService {
 
         // We save to the database
         gottenChannel.setMembers(members);
-        channelRepository.save(gottenChannel);
+        var savedChannel = channelRepository.save(gottenChannel);
 
         var member = admin.map(Member::fromAdmin).orElseGet(() -> Member.fromStudent(student.get()));
 
@@ -219,6 +226,14 @@ public class ChannelService {
         /// To update the websocket that a new chat has been added
         var chatsResponse = new ApiResponse("User was removed", createdChat);
         messagingTemplate.convertAndSend("/chats/" + channelId, chatsResponse);
+
+        savedChannel.setLatestMessage(createdChat);
+        var updatedChannelResponse = new ApiResponse("Member Removed", savedChannel);
+        // We're going to broadcast the information to all the members
+        var membersId = savedChannel.getMembers().stream().map(Object::toString).toList();
+        for(String memberId : membersId){
+            messagingTemplate.convertAndSend("/channels/" + memberId, updatedChannelResponse);
+        }
 
 
         return true;
@@ -265,6 +280,8 @@ public class ChannelService {
             messagingTemplate.convertAndSend("/chats/" + createdChannel.getId(), chatsResponse);
 
             createdChannel.setLatestMessage(createdChat);
+            var createdChannelResponse = new ApiResponse("Channel Created Successfully", createdChannel);
+            messagingTemplate.convertAndSend("/channels/" + creatorId, createdChannelResponse);
             return Optional.of(createdChannel);
         } catch (Exception e) {
             return Optional.empty();
@@ -272,7 +289,7 @@ public class ChannelService {
 
     }
 
-    public Optional<Channel> updateChannel(String channelId,Channel channel){
+    public Optional<Channel> updateChannel(String channelId, Channel channel){
         // Only Channel name and Channel Description are edited;
 
         /// Intentionally using the repository's findById method instead
@@ -286,12 +303,41 @@ public class ChannelService {
             return Optional.empty();
         }
 
+
+
         var gottenChannel = gottenChannelExists.get();
         gottenChannel.setChannelName(channel.getChannelName());
         gottenChannel.setChannelDescription(channel.getChannelDescription());
         gottenChannel.setChannelType(channel.getChannelType());
 
-        return Optional.of(channelRepository.save(gottenChannel));
+        var creator = getCreator(channelId).get();
+
+        var savedChannel = channelRepository.save(gottenChannel);
+
+        var chat = new Chat();
+        chat.setChannelId(savedChannel.getId());
+        chat.setSenderProfile(creator.getProfile());
+        chat.setSenderId(creator.getId());
+        chat.setTimestamp(LocalDateTime.now());
+        chat.setMessageType(MessageType.update);
+        chat.setMessage(creator.getFirstName() + " updated channel '" + channel.getChannelName() + "'.");
+        chat.setReadReceipt(List.of(creator.getId()));
+        var createdChat = chatRepository.save(chat);
+
+        /// To update the websocket that a new chat has been added
+        var chatsResponse = new ApiResponse("Channel Updated", createdChat);
+        messagingTemplate.convertAndSend("/chats/" + savedChannel.getId(), chatsResponse);
+
+
+        savedChannel.setLatestMessage(createdChat);
+        var updatedChannelResponse = new ApiResponse("Channel Updated", savedChannel);
+        // We're going to broadcast the information to all the members
+        var membersId = savedChannel.getMembers().stream().map(Object::toString).toList();
+        for(String memberId : membersId){
+            messagingTemplate.convertAndSend("/channels/" + memberId, updatedChannelResponse);
+        }
+
+        return Optional.of(channelRepository.save(savedChannel));
     }
 
     public Optional<Channel> updateChannelProfile(String channelId, String url){
@@ -330,6 +376,15 @@ public class ChannelService {
         /// To update the websocket that a new chat has been added
         var chatsResponse = new ApiResponse("Channel Photo Updated", savedChat);
         messagingTemplate.convertAndSend("/chats/" + channelId, chatsResponse);
+
+        savedChannel.setLatestMessage(savedChat);
+        var updatedChannelResponse = new ApiResponse("Channel Photo Updated", savedChannel);
+
+        // We're going to broadcast the information to all the members
+        var members = channel.getMembers().stream().map(Object::toString).toList();
+        for(String member : members){
+            messagingTemplate.convertAndSend("/channels/" + member, updatedChannelResponse);
+        }
 
         return Optional.of(savedChannel);
     }
