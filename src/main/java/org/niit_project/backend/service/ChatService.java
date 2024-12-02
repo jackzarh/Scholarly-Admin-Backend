@@ -79,6 +79,15 @@ public class ChatService {
         var chatsResponse = new ApiResponse("Sent Chats", savedChat);
         messagingTemplate.convertAndSend("/chats/" + channelId, chatsResponse);
 
+        var members = channel.getMembers().stream().map(Object::toString).toList();
+        for(var membersId : members){
+            channel.setLatestMessage(savedChat);
+            channel.setUnreadMessages(getUnseenChatsCount(channelId, membersId).orElse(0));
+
+            var channelResponse = new ApiResponse("Chat Sent To Channel", channel);
+            messagingTemplate.convertAndSend("/channels/" + memberId, channelResponse);
+        }
+
         return savedChat;
     }
 
@@ -124,5 +133,19 @@ public class ChatService {
             return chat;
         }).toList();
         return chats;
+    }
+
+    public Optional<Integer> getUnseenChatsCount(String channelId, String memberId){
+        /// Aggregate Chats that belong to this channel
+        /// And have not been read by this member
+        var matchPipeline = Aggregation.match(Criteria.where("channelId").is(channelId).andOperator(Criteria.where("readReceipt").nin(memberId)));
+        var aggregation = Aggregation.newAggregation(matchPipeline);
+
+        var results = mongoTemplate.aggregate(aggregation, "chats", Chat.class).getMappedResults();
+
+        if(results.isEmpty()){
+            return Optional.empty();
+        }
+        return Optional.of(results.size());
     }
 }
