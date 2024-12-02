@@ -14,7 +14,7 @@ public class WebSocketChannelController {
     @Autowired
     private ChannelController channelController;
 
-    @MessageMapping("/getChannel/{userId}")
+    @MessageMapping("/getChannels/{userId}")
     @SendTo("/channels/{userId}")
     public ApiResponse listChannels(@DestinationVariable String userId){
         var response = new ApiResponse();
