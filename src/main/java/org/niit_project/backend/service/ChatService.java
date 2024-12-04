@@ -62,7 +62,7 @@ public class ChatService {
         }
 
         var channel = getChannel.get();
-        if(!channel.getMembers().contains(memberId)){
+        if(!channel.getMembers().stream().map(Object::toString).toList().contains(memberId)){
             throw new Exception("Member is not part of channel");
         }
 
