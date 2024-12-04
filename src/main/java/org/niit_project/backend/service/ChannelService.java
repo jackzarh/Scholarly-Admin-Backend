@@ -208,7 +208,7 @@ public class ChannelService {
         }
 
         // We remove the member
-        var members = gottenChannel.getMembers();
+        var members = new ArrayList<Object>(gottenChannel.getMembers().stream().map(Object::toString).toList());
         members.remove(userId);
 
         // We save to the database
@@ -240,7 +240,7 @@ public class ChannelService {
             savedChannel.setLatestMessage(createdChat);
             var updatedChannelResponse = new ApiResponse("Member Removed", savedChannel);
 
-            messagingTemplate.convertAndSend("/channels/" + memberId, updatedChannelResponse);
+            messagingTemplate.convertAndSend("/channels/" + channelId, updatedChannelResponse);
         }
 
 
