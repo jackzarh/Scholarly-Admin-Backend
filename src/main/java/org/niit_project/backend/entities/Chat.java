@@ -16,9 +16,11 @@ public class Chat {
     private String senderId;
     private String senderProfile;
     private String channelId;
+    private String thumbnail;
 
     private String message;
     private String attachment;
+    private String fileName;
 
     private AttachmentType attachmentType;
 
@@ -57,6 +59,22 @@ public class Chat {
 
     public void setSenderId(String senderId) {
         this.senderId = senderId;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public String getThumbnail() {
+        return thumbnail;
+    }
+
+    public void setThumbnail(String thumbnail) {
+        this.thumbnail = thumbnail;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
 
     public String getSenderProfile() {

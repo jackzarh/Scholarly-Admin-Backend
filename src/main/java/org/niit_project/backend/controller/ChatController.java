@@ -15,6 +15,9 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
+
 @RestController
 @RequestMapping("scholarly/api/v1/chat")
 public class ChatController {
@@ -62,30 +65,49 @@ public class ChatController {
         }
     }
 
-    @PostMapping(path = "/sendAttachment/{channelId}/{senderId}", consumes = "multipart/form-data")
-    public ResponseEntity<ApiResponse> sendChat(@PathVariable String channelId, @PathVariable String senderId, @RequestPart("attachment") MultipartFile attachment, @RequestPart("attachmentType")AttachmentType type, @RequestPart("message") String message){
+    @PostMapping(value = "/sendAttachment/{channelId}/{senderId}", consumes = "multipart/form-data")
+    public ResponseEntity<ApiResponse> sendChat(@PathVariable String channelId, @PathVariable String senderId, @RequestPart("attachment") MultipartFile attachment, @RequestPart("thumbnail") MultipartFile thumbnail ,@RequestPart("attachmentType") String type, @RequestPart("message") String message){
         var response = new ApiResponse();
 
+        var attachmentType = type == null? AttachmentType.image: AttachmentType.valueOf(type);
+        var resource_type = List.of(AttachmentType.image, AttachmentType.video).contains(attachmentType)?attachmentType.name().toLowerCase() :"raw";
+        var fileName = attachment.getOriginalFilename();
         try{
+            var chat = new Chat();
             var dotenv = Dotenv.load();
             var cloudinary = new Cloudinary(dotenv.get("CLOUDINARY_URL"));
 
+            if(thumbnail != null && !thumbnail.isEmpty() && attachmentType == AttachmentType.video || attachmentType == AttachmentType.audio){
+                var params = ObjectUtils.asMap(
+                        "use_filename", false,
+                        "resource_type", "image",
+                        "unique_filename", true,
+                        "overwrite", false
+                );
+                var thumbnailUrl = cloudinary.uploader().upload(thumbnail.getBytes(), params);
+                var thumbnail_url = thumbnailUrl.get("secure_url").toString();
+                chat.setThumbnail(thumbnail_url);
+            }
+
             var params = ObjectUtils.asMap(
                     "use_filename", true,
-                    "unique_filename", false,
-                    "overwrite", true
+                    "resource_type", resource_type,
+                    "unique_filename", true,
+                    "overwrite", false
             );
 
             var result = cloudinary.uploader().upload(attachment.getBytes(), params);
             var secure_url = result.get("secure_url");
 
-            var chat = new Chat();
+
+
             chat.setAttachment(secure_url.toString());
             chat.setChannelId(channelId);
             chat.setSenderId(senderId);
             chat.setMessage(message);
             chat.setMessageType(MessageType.chat);
-            chat.setAttachmentType(type == null? AttachmentType.image: type);
+            chat.setFileName(fileName);
+            chat.setAttachmentType(attachmentType);
 
             var createdChat = chatService.createChat(chat, channelId, senderId);
             response.setMessage("Uploaded Attachment Successfully");
