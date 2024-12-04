@@ -146,7 +146,10 @@ public class ChannelService {
 
         /// We then update the members/add the member
         /// And save it in the repository
-        gottenChannel.setMembers(List.of(gottenChannel.getMembers(), member.getId()));
+        var members = gottenChannel.getMembers().stream().map(Object::toString).toList();
+        var newMembers = new ArrayList<Object>(members);
+        newMembers.add(member.getId());
+        gottenChannel.setMembers(newMembers);
         var savedChannel = channelRepository.save(gottenChannel);
 
         // If the user/admin was added. We want to send a chat indicating
