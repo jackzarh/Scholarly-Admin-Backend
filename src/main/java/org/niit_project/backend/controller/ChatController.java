@@ -69,10 +69,11 @@ public class ChatController {
     public ResponseEntity<ApiResponse> sendChat(@PathVariable String channelId, @PathVariable String senderId, @RequestPart("attachment") MultipartFile attachment, @RequestPart("thumbnail") MultipartFile thumbnail ,@RequestPart("attachmentType") String type, @RequestPart("message") String message){
         var response = new ApiResponse();
 
-        var attachmentType = type == null? AttachmentType.image: AttachmentType.valueOf(type);
-        var resource_type = List.of(AttachmentType.image, AttachmentType.video).contains(attachmentType)?attachmentType.name().toLowerCase() :"raw";
-        var fileName = attachment.getOriginalFilename();
+
         try{
+            var attachmentType = type == null? AttachmentType.image: AttachmentType.valueOf(type);
+            var resource_type = List.of(AttachmentType.image, AttachmentType.video).contains(attachmentType)?attachmentType.name().toLowerCase() :"raw";
+            var fileName = attachment.getOriginalFilename();
             var chat = new Chat();
             var dotenv = Dotenv.load();
             var cloudinary = new Cloudinary(dotenv.get("CLOUDINARY_URL"));
