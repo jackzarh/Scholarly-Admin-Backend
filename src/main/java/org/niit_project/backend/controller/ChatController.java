@@ -66,7 +66,7 @@ public class ChatController {
     }
 
     @PostMapping(value = "/sendAttachment/{channelId}/{senderId}", consumes = "multipart/form-data")
-    public ResponseEntity<ApiResponse> sendChat(@PathVariable String channelId, @PathVariable String senderId, @RequestPart("attachment") MultipartFile attachment, @RequestPart("thumbnail") MultipartFile thumbnail ,@RequestPart("attachmentType") String type, @RequestPart("message") String message){
+    public ResponseEntity<ApiResponse> sendAttachmentChat(@PathVariable String channelId, @PathVariable String senderId, @RequestPart("attachment") MultipartFile attachment, @RequestPart(value = "thumbnail", required = false) MultipartFile thumbnail ,@RequestPart(value = "attachmentType", required = false) String type, @RequestPart(value = "message", required = false) String message){
         var response = new ApiResponse();
 
 
