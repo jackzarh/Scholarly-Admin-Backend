@@ -97,7 +97,7 @@ public class ChatController {
                     "overwrite", false
             );
 
-            var result = cloudinary.uploader().upload(attachment.getBytes(), params);
+            var result = cloudinary.uploader().upload(attachment.getInputStream(), params);
             var secure_url = result.get("secure_url");
 
 
