@@ -15,6 +15,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.List;
 
 
@@ -97,8 +99,20 @@ public class ChatController {
                     "overwrite", false
             );
 
-            var result = cloudinary.uploader().upload(attachment.getInputStream(), params);
+            var tempFile = File.createTempFile("upload-",fileName);
+            try(var inputStream = attachment.getInputStream();
+                var outputStream = new FileOutputStream(tempFile);
+            ){
+                inputStream.transferTo(outputStream);
+            }
+
+
+            var result = cloudinary.uploader().upload(tempFile, params);
+            // We have to delete the tempFile Immediately It's done uploading
+            tempFile.delete();
             var secure_url = result.get("secure_url");
+
+
 
 
 
