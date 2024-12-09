@@ -78,7 +78,7 @@ public class ChatService {
         var chatsResponse = new ApiResponse("Sent Chats", savedChat);
         messagingTemplate.convertAndSend("/chats/" + channelId, chatsResponse);
 
-        var members = channel.getMembers().stream().map(Object::toString).toList();
+        var members = channel.getMembers().stream().map(o -> ((Member)o).getId()).toList();
         for(var membersId : members){
             channel.setLatestMessage(savedChat);
             channel.setUnreadMessages(getUnseenChatsCount(channelId, membersId).orElse(0));
