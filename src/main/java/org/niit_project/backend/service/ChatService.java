@@ -53,17 +53,17 @@ public class ChatService {
         }
 
         // We check if the member and channel exists
-        var getChannel = channelService.getCompactChannel(channelId);
+        var getChannel = channelService.getOneChannel(channelId);
         if(getChannel.isEmpty()){
             throw new Exception("Channel Doesn't exist");
         }
 
         var channel = getChannel.get();
-        if(!channel.getMembers().stream().map(Object::toString).toList().contains(memberId)){
+        if(!channel.getMembers().stream().map(o -> ((Member)o).getId()).toList().contains(memberId)){
             throw new Exception("Member is not part of channel");
         }
 
-        var member = adminService.getAdmin(memberId).get();
+        var member = channel.getMembers().stream().map(o-> (Member)o).filter(member1 -> member1.getId().equals(memberId)).toList().get(0);
 
         chat.setChannelId(channelId);
         chat.setSenderId(memberId);
@@ -119,7 +119,14 @@ public class ChatService {
     public Optional<Integer> getUnseenChatsCount(String channelId, String memberId){
         /// Aggregate Chats that belong to this channel
         /// And have not been read by this member
-        var matchPipeline = Aggregation.match(Criteria.where("channelId").is(channelId).andOperator(Criteria.where("readReceipt").nin(memberId)));
+        var matchPipeline = Aggregation.match(
+                new Criteria().andOperator(
+                        Criteria.where("channelId").is(channelId),
+                        Criteria.where("readReceipt").size(0).not(),
+                        Criteria.where("senderId").ne(memberId),
+                        Criteria.where("readReceipt").nin(memberId)
+                )
+        );
         var aggregation = Aggregation.newAggregation(matchPipeline);
 
         var results = mongoTemplate.aggregate(aggregation, "chats", Chat.class).getMappedResults();
@@ -132,7 +139,7 @@ public class ChatService {
 
     public Chat markChatAsRead(String userId, String channelId, String chatId) throws Exception{
         var chat = getCompactChat(chatId);
-        var channel = channelService.getCompactChannel(channelId);
+        var channel = channelService.getOneChannel(channelId);
 
         // First, We make sure the channel exists
         if(channel.isEmpty()){
@@ -141,7 +148,7 @@ public class ChatService {
 
         // We then get the channel and get all it's members
         var gottenChannel = channel.get();
-        var members = gottenChannel.getMembers().stream().map(Object::toString).toList();
+        var members = gottenChannel.getMembers().stream().map(o -> ((Member)o).getId()).toList();
 
         // Secondly, we make sure the member is a part of the channel
         if(!members.contains(userId)){
@@ -178,7 +185,9 @@ public class ChatService {
 
         // Then we update the channel websocket of the member who read the message
         response.setMessage("Chat marked as read successfully");
-        response.setData(channelService.getCompactChannel(channelId));
+        gottenChannel.setUnreadMessages(0);
+        gottenChannel.setLatestMessage(savedChat);
+        response.setData(gottenChannel);
         messagingTemplate.convertAndSend("/channels/" + userId, response);
 
 

@@ -47,7 +47,7 @@ public class SideChatService {
 
         /// Aggregate Chats and Get the Latest One.
         var matchPipeline = Aggregation.match(Criteria.where("channelId").is(channelId));
-        var limitPipeline =Aggregation.limit(1);
+        var limitPipeline = Aggregation.limit(1);
         var sortPipeline = Aggregation.sort(Sort.by(Sort.Direction.DESC, "_id"));
         var aggregation = Aggregation.newAggregation(matchPipeline, sortPipeline, limitPipeline);
 

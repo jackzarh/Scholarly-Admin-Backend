@@ -182,10 +182,11 @@ public class ChannelService {
 
         // We're going to broadcast the information to all the members
         var membersId = savedChannel.getMembers().stream().map(Object::toString).toList();
+        var fetchedChannel = getOneChannel(channelId).get();
         for(String memberId : membersId){
-            savedChannel.setUnreadMessages(chatService.getUnseenChatsCount(channelId, memberId).orElse(0));
-            savedChannel.setLatestMessage(createdChat);
-            var updatedChannelResponse = new ApiResponse("Member Added", savedChannel);
+            fetchedChannel.setUnreadMessages(chatService.getUnseenChatsCount(channelId, memberId).orElse(0));
+            fetchedChannel.setLatestMessage(createdChat);
+            var updatedChannelResponse = new ApiResponse("Member Added", fetchedChannel);
 
 
             messagingTemplate.convertAndSend("/channels/" + memberId, updatedChannelResponse);
@@ -247,10 +248,12 @@ public class ChannelService {
 
         // We're going to broadcast the information to all the members
         var membersId = savedChannel.getMembers().stream().map(Object::toString).toList();
+        var fetchedChannel = getOneChannel(channelId).get();
+
         for(String memberId : membersId){
-            savedChannel.setUnreadMessages(chatService.getUnseenChatsCount(channelId, memberId).orElse(0));
-            savedChannel.setLatestMessage(createdChat);
-            var updatedChannelResponse = new ApiResponse("Member Removed", savedChannel);
+            fetchedChannel.setUnreadMessages(chatService.getUnseenChatsCount(channelId, memberId).orElse(0));
+            fetchedChannel.setLatestMessage(createdChat);
+            var updatedChannelResponse = new ApiResponse("Member Removed", fetchedChannel);
 
             messagingTemplate.convertAndSend("/channels/" + channelId, updatedChannelResponse);
         }
@@ -300,10 +303,12 @@ public class ChannelService {
             messagingTemplate.convertAndSend("/chats/" + createdChannel.getId(), chatsResponse);
 
 
-            createdChannel.setLatestMessage(createdChat);
-            var createdChannelResponse = new ApiResponse("Channel Created Successfully", createdChannel);
+            var fetchedChannel = getOneChannel(channel.getId()).get();
+            fetchedChannel.setLatestMessage(createdChat);
+            fetchedChannel.setUnreadMessages(0);
+            var createdChannelResponse = new ApiResponse("Channel Created Successfully", fetchedChannel);
             messagingTemplate.convertAndSend("/channels/" + creatorId, createdChannelResponse);
-            return Optional.of(createdChannel);
+            return Optional.of(fetchedChannel);
         } catch (Exception e) {
             return Optional.empty();
         }
@@ -334,6 +339,7 @@ public class ChannelService {
         var creator = getCreator(channelId).get();
 
         var savedChannel = channelRepository.save(gottenChannel);
+        var fetchedChannel = getOneChannel(channelId).get();
 
         var chat = new Chat();
         chat.setChannelId(savedChannel.getId());
@@ -354,13 +360,13 @@ public class ChannelService {
         // We're going to broadcast the information to all the members
         var membersId = savedChannel.getMembers().stream().map(Object::toString).toList();
         for(String memberId : membersId){
-            savedChannel.setUnreadMessages(chatService.getUnseenChatsCount(channelId, memberId).orElse(0));
-            savedChannel.setLatestMessage(createdChat);
-            var updatedChannelResponse = new ApiResponse("Channel Updated", savedChannel);
+            fetchedChannel.setUnreadMessages(chatService.getUnseenChatsCount(channelId, memberId).orElse(0));
+            fetchedChannel.setLatestMessage(createdChat);
+            var updatedChannelResponse = new ApiResponse("Channel Updated", fetchedChannel);
             messagingTemplate.convertAndSend("/channels/" + memberId, updatedChannelResponse);
         }
 
-        return Optional.of(channelRepository.save(savedChannel));
+        return Optional.of(fetchedChannel);
     }
 
     public Optional<Channel> updateChannelProfile(String channelId, String url){
@@ -402,13 +408,14 @@ public class ChannelService {
 
         // We're going to broadcast the information to all the members
         var members = channel.getMembers().stream().map(Object::toString).toList();
+        var fetchedChannel = getOneChannel(channelId).get();
         for(String member : members){
-            savedChannel.setUnreadMessages(chatService.getUnseenChatsCount(channelId, member).orElse(0));
-            savedChannel.setLatestMessage(savedChat);
-            var updatedChannelResponse = new ApiResponse("Channel Photo Updated", savedChannel);
+            fetchedChannel.setUnreadMessages(chatService.getUnseenChatsCount(channelId, member).orElse(0));
+            fetchedChannel.setLatestMessage(savedChat);
+            var updatedChannelResponse = new ApiResponse("Channel Photo Updated", fetchedChannel);
             messagingTemplate.convertAndSend("/channels/" + member, updatedChannelResponse);
         }
 
-        return Optional.of(savedChannel);
+        return Optional.of(fetchedChannel);
     }
 }
