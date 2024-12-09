@@ -134,4 +134,35 @@ public class ChatController {
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
     }
+
+    @PatchMapping(path = "/markChatAsRead/{channelId}/{userId}/{chatId}")
+    public ResponseEntity<ApiResponse> markChatAsRead(@PathVariable String chatId, @PathVariable String channelId, @PathVariable("userId") String memberId){
+        var response = new ApiResponse();
+
+        try{
+            var markedChat = chatService.markChatAsRead(memberId, channelId, chatId);
+            response.setMessage("Marked Chat As Read");
+            response.setData(markedChat);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            response.setMessage(e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+
+    }
+
+//    @PatchMapping(path = "/markAllChatsAsRead/{channelId}/{userId}")
+//    public ResponseEntity<ApiResponse> markAllChatsAsRead(@PathVariable String channelId, @PathVariable("userId") String memberId){
+//        var response = new ApiResponse();
+//
+//        try{
+//            var markedChat = chatService.markChatAsRead(memberId, channelId, chatId);
+//            response.setMessage("Marked All Chats As Read");
+//            response.setData(markedChat);
+//            return new ResponseEntity<>(response, HttpStatus.OK);
+//        } catch (Exception e) {
+//            response.setMessage(e.getMessage());
+//            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+//        }
+//    }
 }

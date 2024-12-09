@@ -12,10 +12,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class ChatService {
@@ -71,7 +68,9 @@ public class ChatService {
         chat.setChannelId(channelId);
         chat.setSenderId(memberId);
         chat.setSenderProfile(member.getProfile());
-        chat.setReadReceipt(List.of(memberId));
+        var readReceipt = new ArrayList<>();
+        readReceipt.add(member);
+        chat.setReadReceipt(readReceipt);
 
         var savedChat = chatRepository.save(chat);
 
@@ -106,7 +105,7 @@ public class ChatService {
         var aggregation = Aggregation.newAggregation(matchPipeline, sortPipeline);
 
         /// Aggregation To get View Receipt as Members
-        var members = getChannel.get().getMembers().stream().map(Object::toString).toList();
+        var members = getChannel.get().getMembers().stream().map(o -> ((Member)o).getId()).toList();
         var membersMatch = Aggregation.match(Criteria.where("_id").in(members));
         var membersAggregations = Aggregation.newAggregation(membersMatch);
 
@@ -135,6 +134,10 @@ public class ChatService {
         return chats;
     }
 
+    public Optional<Chat> getCompactChat(String chatId){
+        return chatRepository.findById(chatId);
+    }
+
     public Optional<Integer> getUnseenChatsCount(String channelId, String memberId){
         /// Aggregate Chats that belong to this channel
         /// And have not been read by this member
@@ -148,4 +151,100 @@ public class ChatService {
         }
         return Optional.of(results.size());
     }
+
+    public Chat markChatAsRead(String userId, String channelId, String chatId) throws Exception{
+        var chat = getCompactChat(chatId);
+        var channel = channelService.getCompactChannel(channelId);
+
+        // First, We make sure the channel exists
+        if(channel.isEmpty()){
+            throw new Exception("Channel Not Found");
+        }
+
+        // We then get the channel and get all it's members
+        var gottenChannel = channel.get();
+        var members = gottenChannel.getMembers().stream().map(Object::toString).toList();
+
+        // Secondly, we make sure the member is a part of the channel
+        if(!members.contains(userId)){
+            throw new Exception("This member is not part of this channel");
+        }
+
+        // We also make sure that the chat itself also exists.
+        if(chat.isEmpty()){
+            throw new Exception("Chat Not Found");
+        }
+
+        // We get the chats and also it's read receipts.
+        var gottenChat = chat.get();
+        var readReceipt = new ArrayList<Object>(gottenChat.getReadReceipt().stream().map(Object::toString).toList());
+
+        // We then make sure that we're only updating the read receipt if the user hasn't
+        // ... read it to prevent redundancy.
+        if(readReceipt.contains(userId)){
+            return gottenChat;
+        }
+
+        // If the member hasn't read the chat, we add he/she to the read receipt
+        // ... and then save it in the chat
+        readReceipt.add(userId);
+        gottenChat.setReadReceipt(readReceipt);
+
+        var savedChat = chatRepository.save(gottenChat);
+
+        // We send the updated chat to the websocket endpoint
+        var response = new ApiResponse();
+        response.setMessage("Chat has been marked read");
+        response.setData(savedChat);
+        messagingTemplate.convertAndSend("/chats/" + channelId, response);
+
+        // Then we update the channel websocket of the member who read the message
+        response.setMessage("Chat marked as read successfully");
+        response.setData(channelService.getCompactChannel(channelId));
+        messagingTemplate.convertAndSend("/channels/" + userId, response);
+
+
+        return savedChat;
+    }
+
+//    public Chat markAllChatsAsRead(String userId, String channelId) throws Exception{
+//        var chat = getCompactChat(chatId);
+//        var channel = channelService.getCompactChannel(channelId);
+//
+//        // First, We make sure the channel exists
+//        if(channel.isEmpty()){
+//            throw new Exception("Channel Not Found");
+//        }
+//
+//        // We then get the channel and get all it's members
+//        var gottenChannel = channel.get();
+//        var members = gottenChannel.getMembers().stream().map(Object::toString).toList();
+//
+//        // Secondly, we make sure the member is a part of the channel
+//        if(!members.contains(userId)){
+//            throw new Exception("This member is not part of this channel");
+//        }
+//
+//        // We also make sure that the chat itself also exists.
+//        if(chat.isEmpty()){
+//            throw new Exception("Chat Not Found");
+//        }
+//
+//        // We get the chats and also it's read receipts.
+//        var gottenChat = chat.get();
+//        var readReceipt = new ArrayList<String>(gottenChat.getReadReceipt().stream().map(Object::toString).toList());
+//
+//        // We then make sure that we're only updating the read receipt if the user hasn't
+//        // ... read it to prevent redundancy.
+//        if(readReceipt.contains(userId)){
+//            return gottenChat;
+//        }
+//
+//        // If the member hasn't read the chat, we add he/she to the read receipt
+//        // ... and then save it in the chat
+//        readReceipt.add(userId);
+//        gottenChat.setReadReceipt(Collections.singletonList(readReceipt));
+//
+//        return chatRepository.save(gottenChat);
+//    }
 }
