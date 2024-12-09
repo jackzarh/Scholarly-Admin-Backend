@@ -69,7 +69,7 @@ public class ChatService {
         chat.setSenderId(memberId);
         chat.setSenderProfile(member.getProfile());
         var readReceipt = new ArrayList<>();
-        readReceipt.add(member);
+        readReceipt.add(member.getId());
         chat.setReadReceipt(readReceipt);
 
         var savedChat = chatRepository.save(chat);
@@ -92,7 +92,7 @@ public class ChatService {
 
     public List<Chat> getChats(String channelId) throws Exception{
 
-        var getChannel = channelService.getOneChannel(channelId);
+        var getChannel = channelService.getCompactChannel(channelId);
 
         if(getChannel.isEmpty()){
             throw new Exception("Channel Doesn't exist");
@@ -104,34 +104,12 @@ public class ChatService {
         var sortPipeline = Aggregation.sort(Sort.by("timestamp"));
         var aggregation = Aggregation.newAggregation(matchPipeline, sortPipeline);
 
-        /// Aggregation To get View Receipt as Members
-        var members = getChannel.get().getMembers().stream().map(o -> ((Member)o).getId()).toList();
-        var membersMatch = Aggregation.match(Criteria.where("_id").in(members));
-        var membersAggregations = Aggregation.newAggregation(membersMatch);
 
-        /// The collate all members
-        var studentMembers = mongoTemplate.aggregate(membersAggregations, "users", Student.class).getMappedResults();
-        var adminMembers = mongoTemplate.aggregate(membersAggregations, "admins", Admin.class).getMappedResults();
-        var allMembers = new ArrayList<>(studentMembers.stream().map(Member::fromStudent).toList());
-        allMembers.addAll(adminMembers.stream().map(Member::fromAdmin).toList());
 
         /// Perform the chat aggregation
         var results = mongoTemplate.aggregate(aggregation,"chats" , Chat.class).getMappedResults();
 
-
-
-        /// Convert chats from having list of ids as read receipt
-        /// To List of members as read receipt
-        /// We filter the readReceipts and then set it to the chats
-        var chats = results.stream().map(chat -> {
-            /// We filter the readReceipts and then set it to the chats
-            var readReceiptsStrings = chat.getReadReceipt().stream().map(Objects::toString).toList();
-            var readReceipt = allMembers.stream().filter(member -> readReceiptsStrings.contains(member.getId())).map(member -> (Object) member).toList();
-
-            chat.setReadReceipt(readReceipt);
-            return chat;
-        }).toList();
-        return chats;
+        return results;
     }
 
     public Optional<Chat> getCompactChat(String chatId){

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -57,6 +58,17 @@ public class ChannelService {
 
         var results = mongoTemplate.aggregate(aggregation, "channels", Channel.class).getMappedResults();
         var formed = results.stream().peek(channel -> {
+            var membersAggregation = Aggregation.newAggregation(Aggregation.match(Criteria.where("_id").in(channel.getMembers())));
+            var studentMembers = mongoTemplate.aggregate(membersAggregation, "users", Student.class).getMappedResults();
+            var adminMembers = mongoTemplate.aggregate(membersAggregation, "admins", Admin.class).getMappedResults();
+
+            //Then collate all members
+            var allMembers = new ArrayList<>(studentMembers.stream().map(Member::fromStudent).toList());
+            allMembers.addAll(adminMembers.stream().map(Member::fromAdmin).toList());
+            channel.setMembers(Arrays.asList(allMembers.toArray()));
+            var creator = allMembers.stream().filter(member -> member.getId().equals(channel.getCreator())).findFirst().orElse(allMembers.isEmpty()? null: allMembers.get(0));
+            channel.setCreator(creator);
+
             /// We get the last message of the chat and if it's empty we set it to null
             /// And also set the unread messages of the chat.
             channel.setLatestMessage(chatService.getLastChat(channel.getId()).orElse(null));

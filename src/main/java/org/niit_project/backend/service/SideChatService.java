@@ -73,7 +73,14 @@ public class SideChatService {
 
         /// Aggregate Chats that belong to this channel
         /// And have not been read by this member
-        var matchPipeline = Aggregation.match(Criteria.where("channelId").is(channelId).andOperator(Criteria.where("readReceipt").size(0).not().andOperator(Criteria.where("senderId").is(memberId).not())).andOperator(Criteria.where("readReceipt").nin(memberId)));
+        var matchPipeline = Aggregation.match(
+                new Criteria().andOperator(
+                        Criteria.where("channelId").is(channelId),
+                        Criteria.where("readReceipt").size(0).not(),
+                        Criteria.where("senderId").ne(memberId),
+                        Criteria.where("readReceipt").nin(memberId)
+                )
+        );
         var aggregation = Aggregation.newAggregation(matchPipeline);
 
         var results = mongoTemplate.aggregate(aggregation, "chats", Chat.class).getMappedResults();
