@@ -121,7 +121,7 @@ public class ChatService {
         /// And have not been read by this member
         var matchPipeline = Aggregation.match(
                 new Criteria().andOperator(
-                        Criteria.where("channelId").is(channelId),
+                        Criteria.where("channelId").in(channelId),
                         Criteria.where("readReceipt").size(0).not(),
                         Criteria.where("senderId").ne(memberId),
                         Criteria.where("readReceipt").nin(memberId)
@@ -162,6 +162,7 @@ public class ChatService {
 
         // We get the chats and also it's read receipts.
         var gottenChat = chat.get();
+        gottenChat.setId(chatId);
         var readReceipt = new ArrayList<Object>(gottenChat.getReadReceipt().stream().map(Object::toString).toList());
 
         // We then make sure that we're only updating the read receipt if the user hasn't
@@ -185,7 +186,7 @@ public class ChatService {
 
         // Then we update the channel websocket of the member who read the message
         response.setMessage("Chat marked as read successfully");
-        gottenChannel.setUnreadMessages(0);
+        gottenChannel.setUnreadMessages(getUnseenChatsCount(channelId, userId).orElse(0));
         gottenChannel.setLatestMessage(savedChat);
         response.setData(gottenChannel);
         messagingTemplate.convertAndSend("/channels/" + userId, response);
