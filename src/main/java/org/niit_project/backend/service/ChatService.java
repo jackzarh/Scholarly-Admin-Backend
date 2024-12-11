@@ -84,7 +84,7 @@ public class ChatService {
         var members = channel.getMembers().stream().map(o -> ((Member)o).getId()).toList();
         for(var membersId : members){
             channel.setLatestMessage(savedChat);
-            channel.setUnreadMessages(getUnseenChatsCount(channelId, membersId).orElse(0));
+            channel.setUnreadMessages(getUnseenChatsCount(channelId, membersId));
             channelResponse.setData(channel);
             messagingTemplate.convertAndSend("/channels/" + membersId, channelResponse);
         }
@@ -118,12 +118,12 @@ public class ChatService {
         return chatRepository.findById(chatId);
     }
 
-    public Optional<Integer> getUnseenChatsCount(String channelId, String memberId){
+    public Integer getUnseenChatsCount(String channelId, String memberId){
         /// Aggregate Chats that belong to this channel
         /// And have not been read by this member
         var matchPipeline = Aggregation.match(
                 new Criteria().andOperator(
-                        Criteria.where("channelId").in(channelId),
+                        Criteria.where("channelId").is(channelId),
                         Criteria.where("readReceipt").size(0).not(),
                         Criteria.where("senderId").ne(memberId),
                         Criteria.where("readReceipt").nin(memberId)
@@ -133,10 +133,7 @@ public class ChatService {
 
         var results = mongoTemplate.aggregate(aggregation, "chats", Chat.class).getMappedResults();
 
-        if(results.isEmpty()){
-            return Optional.empty();
-        }
-        return Optional.of(results.size());
+       return results.size();
     }
 
     public Chat markChatAsRead(String userId, String channelId, String chatId) throws Exception{
@@ -188,7 +185,7 @@ public class ChatService {
 
         // Then we update the channel websocket of the member who read the message
         response.setMessage("Chat marked as read successfully");
-        gottenChannel.setUnreadMessages(getUnseenChatsCount(channelId, userId).orElse(0));
+        gottenChannel.setUnreadMessages(getUnseenChatsCount(channelId, userId));
         gottenChannel.setLatestMessage(savedChat);
         response.setData(gottenChannel);
         messagingTemplate.convertAndSend("/channels/" + userId, response);
