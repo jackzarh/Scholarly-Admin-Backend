@@ -72,7 +72,7 @@ public class ChannelService {
             /// We get the last message of the chat and if it's empty we set it to null
             /// And also set the unread messages of the chat.
             channel.setLatestMessage(chatService.getLastChat(channel.getId()).orElse(null));
-            channel.setUnreadMessages(chatService.getUnseenChatsCount(channel.getId(), adminId).orElse(0));
+            channel.setUnreadMessages(chatService.getUnseenChatsCount(channel.getId(), adminId));
         }).toList();
         var sorted = formed.stream().sorted((channel1, channel2) -> (channel2.getLatestMessage() != null ? channel2.getLatestMessage().getTimestamp() : channel2.getCreatedAt()).compareTo((channel1.getLatestMessage() != null? channel1.getLatestMessage().getTimestamp(): channel1.getCreatedAt()))).toList();
 
@@ -184,7 +184,7 @@ public class ChannelService {
         var membersId = savedChannel.getMembers().stream().map(Object::toString).toList();
         var fetchedChannel = getOneChannel(channelId).get();
         for(String memberId : membersId){
-            fetchedChannel.setUnreadMessages(chatService.getUnseenChatsCount(channelId, memberId).orElse(0));
+            fetchedChannel.setUnreadMessages(chatService.getUnseenChatsCount(channelId, memberId));
             fetchedChannel.setLatestMessage(createdChat);
             var updatedChannelResponse = new ApiResponse("Member Added", fetchedChannel);
 
@@ -251,7 +251,7 @@ public class ChannelService {
         var fetchedChannel = getOneChannel(channelId).get();
 
         for(String memberId : membersId){
-            fetchedChannel.setUnreadMessages(chatService.getUnseenChatsCount(channelId, memberId).orElse(0));
+            fetchedChannel.setUnreadMessages(chatService.getUnseenChatsCount(channelId, memberId));
             fetchedChannel.setLatestMessage(createdChat);
             var updatedChannelResponse = new ApiResponse("Member Removed", fetchedChannel);
 
@@ -360,7 +360,7 @@ public class ChannelService {
         // We're going to broadcast the information to all the members
         var membersId = savedChannel.getMembers().stream().map(Object::toString).toList();
         for(String memberId : membersId){
-            fetchedChannel.setUnreadMessages(chatService.getUnseenChatsCount(channelId, memberId).orElse(0));
+            fetchedChannel.setUnreadMessages(chatService.getUnseenChatsCount(channelId, memberId));
             fetchedChannel.setLatestMessage(createdChat);
             var updatedChannelResponse = new ApiResponse("Channel Updated", fetchedChannel);
             messagingTemplate.convertAndSend("/channels/" + memberId, updatedChannelResponse);
@@ -410,7 +410,7 @@ public class ChannelService {
         var members = channel.getMembers().stream().map(Object::toString).toList();
         var fetchedChannel = getOneChannel(channelId).get();
         for(String member : members){
-            fetchedChannel.setUnreadMessages(chatService.getUnseenChatsCount(channelId, member).orElse(0));
+            fetchedChannel.setUnreadMessages(chatService.getUnseenChatsCount(channelId, member));
             fetchedChannel.setLatestMessage(savedChat);
             var updatedChannelResponse = new ApiResponse("Channel Photo Updated", fetchedChannel);
             messagingTemplate.convertAndSend("/channels/" + member, updatedChannelResponse);

@@ -60,23 +60,12 @@ public class SideChatService {
     }
 
 
-    public Optional<Integer> getUnseenChatsCount(String channelId, String memberId){
-        var getChannel = getCompactChannel(channelId);
-
-        if(getChannel.isEmpty()){
-            return Optional.empty();
-        }
-
-        if(!getChannel.get().getMembers().contains(memberId)){
-            return Optional.empty();
-        }
-
+    public Integer getUnseenChatsCount(String channelId, String memberId){
         /// Aggregate Chats that belong to this channel
         /// And have not been read by this member
         var matchPipeline = Aggregation.match(
                 new Criteria().andOperator(
                         Criteria.where("channelId").is(channelId),
-                        Criteria.where("readReceipt").size(0).not(),
                         Criteria.where("senderId").ne(memberId),
                         Criteria.where("readReceipt").nin(memberId)
                 )
@@ -85,10 +74,8 @@ public class SideChatService {
 
         var results = mongoTemplate.aggregate(aggregation, "chats", Chat.class).getMappedResults();
 
-        if(results.isEmpty()){
-            return Optional.empty();
-        }
-        return Optional.of(results.size());
+
+        return results.size();
     }
 
 }

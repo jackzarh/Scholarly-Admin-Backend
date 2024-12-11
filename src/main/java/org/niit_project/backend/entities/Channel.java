@@ -2,6 +2,7 @@ package org.niit_project.backend.entities;
 
 import lombok.Data;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -30,6 +31,7 @@ public class Channel {
 
     private Chat latestMessage;
 
+    @Transient
     private Integer unreadMessages;
 
     public Chat getLatestMessage() {

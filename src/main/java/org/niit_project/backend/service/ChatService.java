@@ -123,7 +123,6 @@ public class ChatService {
         var matchPipeline = Aggregation.match(
                 new Criteria().andOperator(
                         Criteria.where("channelId").is(channelId),
-                        Criteria.where("readReceipt").size(0).not(),
                         Criteria.where("senderId").ne(memberId),
                         Criteria.where("readReceipt").nin(memberId)
                 )
