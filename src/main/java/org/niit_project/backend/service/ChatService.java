@@ -78,13 +78,15 @@ public class ChatService {
         var chatsResponse = new ApiResponse("Sent Chats", savedChat);
         messagingTemplate.convertAndSend("/chats/" + channelId, chatsResponse);
 
+        /// To update the channels websocket that a new chat has been added
+        var channelResponse = new ApiResponse();
+        channelResponse.setMessage("Chat Sent To Channel");
         var members = channel.getMembers().stream().map(o -> ((Member)o).getId()).toList();
         for(var membersId : members){
             channel.setLatestMessage(savedChat);
             channel.setUnreadMessages(getUnseenChatsCount(channelId, membersId).orElse(0));
-
-            var channelResponse = new ApiResponse("Chat Sent To Channel", channel);
-            messagingTemplate.convertAndSend("/channels/" + memberId, channelResponse);
+            channelResponse.setData(channel);
+            messagingTemplate.convertAndSend("/channels/" + membersId, channelResponse);
         }
 
         return savedChat;

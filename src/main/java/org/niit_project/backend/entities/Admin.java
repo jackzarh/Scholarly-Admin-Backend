@@ -37,6 +37,8 @@ public class Admin {
     @Indexed(unique = true)
     private String phoneNumber;
 
+    private boolean online;
+
     private LocalDateTime createdAt;
 
 
@@ -117,5 +119,13 @@ public class Admin {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public boolean isOnline() {
+        return online;
+    }
+
+    public void setOnline(boolean online) {
+        this.online = online;
     }
 }
