@@ -33,7 +33,7 @@ public class ChatService {
     private MongoTemplate mongoTemplate;
 
 
-    public Chat createChat(Chat chat, String channelId, String memberId) throws Exception{
+    public Chat createChat(Chat chat,final String channelId, String memberId) throws Exception{
         /// By default, we set the id to null and the time to the current time
         chat.setId(null);
         chat.setTimestamp(LocalDateTime.now());
@@ -68,9 +68,7 @@ public class ChatService {
         chat.setChannelId(channelId);
         chat.setSenderId(memberId);
         chat.setSenderProfile(member.getProfile());
-        var readReceipt = new ArrayList<>();
-        readReceipt.add(member.getId());
-        chat.setReadReceipt(readReceipt);
+        chat.setReadReceipt(List.of(memberId));
 
         var savedChat = chatRepository.save(chat);
 
@@ -83,8 +81,9 @@ public class ChatService {
         channelResponse.setMessage("Chat Sent To Channel");
         var members = channel.getMembers().stream().map(o -> ((Member)o).getId()).toList();
         for(var membersId : members){
+            var unreadCount = getUnseenChatsCount(channelId, membersId);
             channel.setLatestMessage(savedChat);
-            channel.setUnreadMessages(getUnseenChatsCount(channelId, membersId));
+            channel.setUnreadMessages(unreadCount);
             channelResponse.setData(channel);
             messagingTemplate.convertAndSend("/channels/" + membersId, channelResponse);
         }
@@ -159,7 +158,7 @@ public class ChatService {
             throw new Exception("Chat Not Found");
         }
 
-        // We get the chats and also it's read receipts.
+        // We get the chats, and also it's read receipts.
         var gottenChat = chat.get();
         gottenChat.setId(chatId);
         var readReceipt = new ArrayList<Object>(gottenChat.getReadReceipt().stream().map(Object::toString).toList());
