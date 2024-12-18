@@ -201,12 +201,12 @@ public class ChannelController {
         }
     }
 
-    @PostMapping("/sendInvitation/{channelId}/{memberId}")
-    public ResponseEntity<ApiResponse> sendChannelInvitation(@PathVariable String channelId, @PathVariable String memberId){
+    @PostMapping("/sendInvitation/{channelId}")
+    public ResponseEntity<ApiResponse> sendChannelInvitation(@PathVariable String channelId, @RequestBody String email){
         var apiResponse = new ApiResponse();
 
         try{
-            var notification = channelService.sendInvitation(memberId, channelId);
+            var notification = channelService.sendInvitation(email, channelId);
             apiResponse.setMessage("Sent invitation to successfully");
             apiResponse.setData(notification);
 

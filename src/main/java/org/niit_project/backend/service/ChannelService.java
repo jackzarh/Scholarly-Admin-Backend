@@ -289,6 +289,8 @@ public class ChannelService {
             throw new Exception("User or Admin doesn't exist");
         }
 
+        var id = admin.isEmpty()? student.get().getId(): admin.get().getId();
+
 
 
         if(channelExists.isEmpty()){
@@ -296,8 +298,12 @@ public class ChannelService {
         }
         var channel = channelExists.get();
 
+        if(channel.getMembers().contains(id)){
+            throw new Exception("User is already a member");
+        }
+
         var notification = new Notification();
-        notification.setUserId(admin.isEmpty()? student.get().getId(): admin.get().getId());
+        notification.setUserId(id);
         notification.setCategory(NotificationCategory.invitation);
         notification.setTarget(channelId);
         notification.setTitle("Channel Invitation");
