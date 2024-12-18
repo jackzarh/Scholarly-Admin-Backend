@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Map;
 
 @RestController
 @RequestMapping("scholarly/api/v1/channel")
@@ -202,11 +203,11 @@ public class ChannelController {
     }
 
     @PostMapping("/sendInvitation/{channelId}")
-    public ResponseEntity<ApiResponse> sendChannelInvitation(@PathVariable String channelId, @RequestBody String email){
+    public ResponseEntity<ApiResponse> sendChannelInvitation(@PathVariable String channelId, @RequestBody Map<String, String> body){
         var apiResponse = new ApiResponse();
 
         try{
-            var notification = channelService.sendInvitation(email, channelId);
+            var notification = channelService.sendInvitation(body.get("email"), channelId);
             apiResponse.setMessage("Sent invitation to successfully");
             apiResponse.setData(notification);
 
