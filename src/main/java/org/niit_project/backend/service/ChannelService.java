@@ -288,10 +288,7 @@ public class ChannelService {
         if(admin.isEmpty() && student.isEmpty()){
             throw new Exception("User or Admin doesn't exist");
         }
-
         var id = admin.isEmpty()? student.get().getId(): admin.get().getId();
-
-
 
         if(channelExists.isEmpty()){
             throw new Exception("Channel doesn't exist");
