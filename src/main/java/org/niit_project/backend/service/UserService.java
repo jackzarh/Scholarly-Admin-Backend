@@ -17,4 +17,8 @@ public class UserService {
     Optional<Student> getCompactStudent(String userId){
         return userRepository.findById(userId);
     }
+
+    Optional<Student> getStudentEmail(String email){
+        return userRepository.findById(email);
+    }
 }

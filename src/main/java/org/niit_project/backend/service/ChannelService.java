@@ -279,8 +279,17 @@ public class ChannelService {
 
     }
 
-    public Notification sendInvitation(String userId, String channelId) throws Exception{
+    public Notification sendInvitation(String email, String channelId) throws Exception{
         var channelExists = channelRepository.findById(channelId);
+
+        var admin = adminService.getAdminByEmail(email);
+        var student = userService.getStudentEmail(email);
+
+        if(admin.isEmpty() && student.isEmpty()){
+            throw new Exception("User or Admin doesn't exist");
+        }
+
+
 
         if(channelExists.isEmpty()){
             throw new Exception("Channel doesn't exist");
@@ -288,7 +297,7 @@ public class ChannelService {
         var channel = channelExists.get();
 
         var notification = new Notification();
-        notification.setUserId(userId);
+        notification.setUserId(admin.isEmpty()? student.get().getId(): admin.get().getId());
         notification.setCategory(NotificationCategory.invitation);
         notification.setTarget(channelId);
         notification.setTitle("Channel Invitation");

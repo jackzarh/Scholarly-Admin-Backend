@@ -49,6 +49,10 @@ public class AdminService {
         return userRepository.findById(id);
     }
 
+    public Optional<Admin> getAdminByEmail(String email){
+        return userRepository.findByEmail(email);
+    }
+
     public Optional<List<Admin>> getAllAdmins(){
         try{
             var allAdmins = userRepository.findAll();
