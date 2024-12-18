@@ -201,6 +201,41 @@ public class ChannelController {
         }
     }
 
+    @PostMapping("/sendInvitation/{channelId}/{memberId}")
+    public ResponseEntity<ApiResponse> sendChannelInvitation(@PathVariable String channelId, @PathVariable String memberId){
+        var apiResponse = new ApiResponse();
+
+        try{
+            var notification = channelService.sendInvitation(memberId, channelId);
+            apiResponse.setMessage("Sent invitation to successfully");
+            apiResponse.setData(notification);
+
+            return new ResponseEntity<>(apiResponse, HttpStatus.OK);
+
+        } catch (Exception e) {
+            apiResponse.setMessage(e.getMessage());
+            return new ResponseEntity<>(apiResponse, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PatchMapping("/respondToInvitation/{invitationId}")
+    public ResponseEntity<ApiResponse> respondToInvitation(@PathVariable String invitationId, @RequestBody boolean accept){
+        var apiResponse = new ApiResponse();
+
+        try{
+            var notification = channelService.respondToInvitation(invitationId, accept);
+            apiResponse.setMessage(accept?"Accepted ": "Rejected " + "invitation successfully");
+            apiResponse.setData(notification);
+
+            return new ResponseEntity<>(apiResponse, HttpStatus.OK);
+
+        } catch (Exception e) {
+            apiResponse.setMessage(e.getMessage());
+            return new ResponseEntity<>(apiResponse, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+
     @PatchMapping("/removeMember/{channelId}/{memberId}")
     public ResponseEntity<ApiResponse> removeMemberFromChannel(@PathVariable String channelId, @PathVariable String memberId){
         var apiResponse = new ApiResponse();
