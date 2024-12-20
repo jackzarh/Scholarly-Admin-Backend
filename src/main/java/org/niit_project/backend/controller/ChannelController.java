@@ -225,7 +225,7 @@ public class ChannelController {
 
         try{
             var notification = channelService.respondToInvitation(invitationId, (Boolean) body.get("accept"));
-            apiResponse.setMessage(accept?"Accepted ": "Rejected " + "invitation successfully");
+            apiResponse.setMessage((Boolean) body.get("accept")?"Accepted ": "Rejected " + "invitation successfully");
             apiResponse.setData(notification);
 
             return new ResponseEntity<>(apiResponse, HttpStatus.OK);
