@@ -220,11 +220,11 @@ public class ChannelController {
     }
 
     @PatchMapping("/respondToInvitation/{invitationId}")
-    public ResponseEntity<ApiResponse> respondToInvitation(@PathVariable String invitationId, @RequestBody boolean accept){
+    public ResponseEntity<ApiResponse> respondToInvitation(@PathVariable String invitationId, @RequestBody Map<String, Object> body){
         var apiResponse = new ApiResponse();
 
         try{
-            var notification = channelService.respondToInvitation(invitationId, accept);
+            var notification = channelService.respondToInvitation(invitationId, (Boolean) body.get("accept"));
             apiResponse.setMessage(accept?"Accepted ": "Rejected " + "invitation successfully");
             apiResponse.setData(notification);
 
