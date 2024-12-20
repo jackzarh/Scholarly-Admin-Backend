@@ -7,6 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("scholarly/api/v1/notification")
 public class NotificationController {
@@ -15,11 +17,11 @@ public class NotificationController {
     private NotificationService notificationService;
 
     @PatchMapping("/markAsRead/{id}")
-    public ResponseEntity<ApiResponse> markAsRead(@PathVariable("id") String notificationId, @RequestBody boolean read){
+    public ResponseEntity<ApiResponse> markAsRead(@PathVariable("id") String notificationId, @RequestBody Map<String, Boolean> body){
         var response = new ApiResponse();
 
         try{
-            var notification = notificationService.markAsRead(notificationId, read);
+            var notification = notificationService.markAsRead(notificationId, body.get("read"));
 
             response.setMessage("Marked notification as read");
             response.setData(notification);
