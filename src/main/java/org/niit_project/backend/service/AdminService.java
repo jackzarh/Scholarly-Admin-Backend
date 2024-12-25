@@ -163,6 +163,7 @@ public class AdminService {
             // Send request
             HttpClient client = HttpClient.newHttpClient();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            System.out.println(response.body());
 
             var token = new ObjectMapper().readTree(response.body()).get("token").asText();
             return token;
