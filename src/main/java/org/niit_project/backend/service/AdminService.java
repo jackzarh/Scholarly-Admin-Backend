@@ -138,7 +138,7 @@ public class AdminService {
 
     public String generateToken(String userId) throws Exception{
         var env = Dotenv.load();
-        try (HttpClient client = HttpClient.newHttpClient()){
+        try {
 //            String token = Jwts.builder()
 //                    .setSubject(userId)
 //                    .setIssuedAt(new Date())
@@ -161,6 +161,7 @@ public class AdminService {
                     .build();
 
             // Send request
+            HttpClient client = HttpClient.newHttpClient();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
             var token = new ObjectMapper().readTree(response.body()).get("token").asText();
