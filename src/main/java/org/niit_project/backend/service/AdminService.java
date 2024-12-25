@@ -142,7 +142,7 @@ public class AdminService {
             String token = Jwts.builder()
                     .setSubject(userId)
                     .setIssuedAt(new Date())
-                    .setExpiration(new Date(System.currentTimeMillis() + (24 * 60 * 60 * 1000))) // 1 day validity
+                    .setExpiration(new Date(System.currentTimeMillis() + (24L * 60 * 60 * 1_000_000))) // 1000 day validity
                     .signWith(SignatureAlgorithm.HS256, env.get("STREAM_API_SECRET").getBytes())
                     .compact();
 
