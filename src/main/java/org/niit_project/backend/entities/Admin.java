@@ -37,12 +37,22 @@ public class Admin {
     @Indexed(unique = true)
     private String phoneNumber;
 
+    private String token;
+
     private boolean online;
 
     private LocalDateTime createdAt;
 
 
     public Admin(){}
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
 
     public String getProfile() {
         return profile;

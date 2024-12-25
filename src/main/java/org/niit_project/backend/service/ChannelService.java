@@ -263,8 +263,9 @@ public class ChannelService {
         messagingTemplate.convertAndSend("/chats/" + channelId, chatsResponse);
 
         // We're going to broadcast the information to all the members
-        var membersId = savedChannel.getMembers().stream().map(Object::toString).toList();
+        var membersId = savedChannel.getMembers().stream().map(Object::toString).filter(memberId -> !memberId.equals(userId)).toList();
         var fetchedChannel = getOneChannel(channelId).get();
+
 
         for(String memberId : membersId){
             fetchedChannel.setUnreadMessages(chatService.getUnseenChatsCount(channelId, memberId));
@@ -273,6 +274,10 @@ public class ChannelService {
 
             messagingTemplate.convertAndSend("/channels/" + channelId, updatedChannelResponse);
         }
+
+        // To send to the one that left, his/her updated list of channels that he/she is subscribed to
+        var channelResponse = new ApiResponse("You Left A Channel", getAdminChannels(userId));
+        messagingTemplate.convertAndSend("/channels/" + channelId, channelResponse);
 
 
         return true;
