@@ -139,34 +139,34 @@ public class AdminService {
     public String generateToken(String userId) throws Exception{
         var env = Dotenv.load();
         try{
-            String token = Jwts.builder()
-                    .setSubject(userId)
-                    .setIssuedAt(new Date())
-                    .setExpiration(new Date(System.currentTimeMillis() + (24L * 60 * 60 * 1_000_000))) // 1000 day validity
-                    .signWith(SignatureAlgorithm.HS256, env.get("STREAM_API_SECRET").getBytes())
-                    .compact();
+//            String token = Jwts.builder()
+//                    .setSubject(userId)
+//                    .setIssuedAt(new Date())
+//                    .setExpiration(new Date(System.currentTimeMillis() + (24L * 60 * 60 * 1_000_000))) // 1000 day validity
+//                    .signWith(SignatureAlgorithm.HS256, env.get("STREAM_API_SECRET").getBytes())
+//                    .compact();
 
 
-            /// Option 2
-//            Map<String, String> payload = new HashMap<>();
-//            payload.put("user_id", userId);
-//            ObjectMapper objectMapper = new ObjectMapper();
-//            String jsonPayload = objectMapper.writeValueAsString(payload);
-//
-//            HttpRequest request = HttpRequest.newBuilder()
-//                    .uri(URI.create("https://chat.stream-io-api.com/v1.0/chat/token"))
-//                    .header("Content-Type", "application/json")
-//                    .header("Authorization", "Bearer " + env.get("STREAM_API_KEY"))
-//                    .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
-//                    .build();
-//
-//            // Send request
-//            HttpResponse<String> response;
-//            try (HttpClient client = HttpClient.newHttpClient()) {
-//                response = client.send(request, HttpResponse.BodyHandlers.ofString());
-//            }
-//
-//            var token = new ObjectMapper().readTree(response.body()).get("token").asText();
+//          Option 2
+            Map<String, String> payload = new HashMap<>();
+            payload.put("user_id", userId);
+            ObjectMapper objectMapper = new ObjectMapper();
+            String jsonPayload = objectMapper.writeValueAsString(payload);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://chat.stream-io-api.com/v1.0/chat/token"))
+                    .header("Content-Type", "application/json")
+                    .header("Authorization", "Bearer " + env.get("STREAM_API_KEY"))
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
+                    .build();
+
+            // Send request
+            HttpResponse<String> response;
+            try (HttpClient client = HttpClient.newHttpClient()) {
+                response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            }
+
+            var token = new ObjectMapper().readTree(response.body()).get("token").asText();
             return token;
         } catch (Exception e) {
             throw new Exception(e.getMessage());
