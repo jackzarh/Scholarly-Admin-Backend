@@ -5,6 +5,7 @@ public class Member {
     private String id;
     private String firstName, lastName;
     private MemberRole role;
+    private Colors color;
     private String email,phoneNumber, profile;
 
     public Member(){}
@@ -19,11 +20,30 @@ public class Member {
         this.profile = profile;
     }
 
+    private Member(String id, String firstName, MemberRole role, String lastName, String email, String phoneNumber, String profile, Colors color) {
+        this.id = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.role = role;
+        this.phoneNumber = phoneNumber;
+        this.profile = profile;
+        this.color = color;
+    }
+
     public static Member fromStudent(Student student){
         return new Member(student.getId(), student.getFirstName(), MemberRole.student, student.getLastName(), student.getEmail(), student.getPhoneNumber(), student.getProfile());
     }
     public static Member fromAdmin(Admin admin){
-        return new Member(admin.getId(), admin.getFirstName(), MemberRole.admin, admin.getLastName(), admin.getEmail(), admin.getPhoneNumber(), admin.getProfile());
+        return new Member(admin.getId(), admin.getFirstName(), MemberRole.admin, admin.getLastName(), admin.getEmail(), admin.getPhoneNumber(), admin.getProfile(), admin.getColor());
+    }
+
+    public Colors getColor() {
+        return color == null? Colors.getRandomColor(): color;
+    }
+
+    public void setColor(Colors color) {
+        this.color = color;
     }
 
     public String getId() {
