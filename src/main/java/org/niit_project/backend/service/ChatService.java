@@ -184,12 +184,35 @@ public class ChatService {
         // Then we update the channel websocket of the member who read the message
         response.setMessage("Chat marked as read successfully");
         gottenChannel.setUnreadMessages(getUnseenChatsCount(channelId, userId));
+        gottenChannel.setLatestMessage(getLastChat(channelId).orElse(null));
         response.setData(gottenChannel);
         messagingTemplate.convertAndSend("/channels/" + userId, response);
 
 
         return savedChat;
     }
+
+    public Optional<Chat> getLastChat(String channelId){
+        var getChannel = channelService.getCompactChannel(channelId);
+
+        if(getChannel.isEmpty()){
+            return Optional.empty();
+        }
+
+        /// Aggregate Chats and Get the Latest One.
+        var matchPipeline = Aggregation.match(Criteria.where("channelId").is(channelId));
+        var limitPipeline = Aggregation.limit(1);
+        var sortPipeline = Aggregation.sort(Sort.by(Sort.Direction.DESC, "_id"));
+        var aggregation = Aggregation.newAggregation(matchPipeline, sortPipeline, limitPipeline);
+
+        var results = mongoTemplate.aggregate(aggregation, "chats", Chat.class).getMappedResults();
+
+        if(results.isEmpty()){
+            return Optional.empty();
+        }
+        return Optional.of(results.get(0));
+    }
+
 
 //    public Chat markAllChatsAsRead(String userId, String channelId) throws Exception{
 //        var chat = getCompactChat(chatId);
