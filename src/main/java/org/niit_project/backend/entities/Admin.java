@@ -43,6 +43,15 @@ public class Admin {
 
     private LocalDateTime createdAt;
 
+    private Colors color;
+
+    public Colors getColor() {
+        return color == null? Colors.getRandomColor(): color;
+    }
+
+    public void setColor(Colors color) {
+        this.color = color;
+    }
 
     public Admin(){}
 

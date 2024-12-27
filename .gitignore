@@ -35,3 +35,6 @@ build/
 ### Environmental variables ###
 *.env
 .env.*
+
+# Shell (Batch) Files
+*.sh

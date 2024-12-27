@@ -9,6 +9,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import im.zego.serverassistant.utils.TokenServerAssistant;
+import io.github.cdimascio.dotenv.Dotenv;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
@@ -34,6 +35,39 @@ public class Token04SampleBase {
         }
     }
 
+    /**
+     * This is the static method that generates a user's token
+     * needed to use zego-cloud features.
+     * @author Teninlanimi Taiwo
+     * @param userId
+     * @return user identity token
+     */
+    public static String generateToken(String userId) throws Exception {
+        var env = Dotenv.load();
+        var secret = env.get("ZEGO_SECRET_KEY");
+        var appId = env.get("ZEGO_APP_ID");
+
+        var effectiveTimeInSeconds = 60 * 10; // 10 minutes
+
+        TokenServerAssistant.VERBOSE = false;
+        TokenServerAssistant.TokenInfo token = TokenServerAssistant.generateToken04(Long.parseLong(appId),  userId, secret, effectiveTimeInSeconds, null);
+
+
+        if(token.error != null && token.error.code != TokenServerAssistant.ErrorCode.SUCCESS){
+            throw new Exception(token.error.message);
+        }
+
+        return token.data;
+
+
+
+    }
+
+    /**
+     * @author ZegoCloud
+     * @param token
+     * @param secretKey
+     */
     static private void decryptToken(String token, String secretKey) {
         String noVersionToken = token.substring(2);
 

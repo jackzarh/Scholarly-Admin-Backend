@@ -349,6 +349,7 @@ public class ChannelService {
         channel.setCreator(creatorId);
         channel.setMembers(List.of(creatorId));
         channel.setCreatedAt(LocalDateTime.now());
+        channel.setColor(Colors.getRandomColor().name());
 
         try{
             var createdChannel = channelRepository.save(channel);

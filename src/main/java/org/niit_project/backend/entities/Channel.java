@@ -31,8 +31,18 @@ public class Channel {
 
     private Chat latestMessage;
 
+    private String color;
+
     @Transient
     private Integer unreadMessages;
+
+    public String getColor() {
+        return color == null? Colors.getRandomColor().name(): color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
+    }
 
     public Chat getLatestMessage() {
         return latestMessage;
