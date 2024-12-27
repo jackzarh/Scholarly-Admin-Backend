@@ -184,7 +184,6 @@ public class ChatService {
         // Then we update the channel websocket of the member who read the message
         response.setMessage("Chat marked as read successfully");
         gottenChannel.setUnreadMessages(getUnseenChatsCount(channelId, userId));
-        gottenChannel.setLatestMessage(savedChat);
         response.setData(gottenChannel);
         messagingTemplate.convertAndSend("/channels/" + userId, response);
 
