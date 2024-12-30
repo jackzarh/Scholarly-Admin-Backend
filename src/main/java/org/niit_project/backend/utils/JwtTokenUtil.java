@@ -22,10 +22,12 @@ public class JwtTokenUtil {
         long expirationTime = 1000 * 60 * 60; // 1 hour expiration time
 
         return Jwts.builder()
-                .setSubject(userId)
+                .setHeaderParam("alg", "HS256")
+                .setHeaderParam("typ", "JWT")
+                .claim("user_id", userId)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
-                .signWith(SignatureAlgorithm.HS256, secretKey)
+                .signWith(SignatureAlgorithm.HS256, secretKey.getBytes())
                 .compact();
 
     }
