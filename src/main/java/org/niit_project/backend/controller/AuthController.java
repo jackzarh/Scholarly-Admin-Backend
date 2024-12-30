@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.Optional;
 
 @RestController
@@ -109,6 +110,21 @@ public class AuthController {
         } catch (Exception e) {
             response.setMessage(e.getMessage());
             return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @PatchMapping("/updateToken/{id}")
+    public ResponseEntity<ApiResponse> updateToken(@PathVariable String id){
+        var response = new ApiResponse();
+
+        try{
+            var token = adminService.generateToken(id);
+            response.setMessage("Created Token Successfully");
+            response.setData(token);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            response.setMessage(e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
         }
     }
 

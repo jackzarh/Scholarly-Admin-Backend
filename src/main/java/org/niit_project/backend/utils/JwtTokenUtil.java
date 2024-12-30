@@ -31,7 +31,7 @@ public class JwtTokenUtil {
     }
 
     public String generateToken(final String userId){
-        long expirationTime = 1000 * 60 * 60; // 1 hour expiration time
+        long expirationTime = 1000 * 60 * 60 * 10; // 10 hour expiration time
         return Jwts.builder()
                 .setHeaderParam("alg", "HS256")
                 .setHeaderParam("typ", "JWT")

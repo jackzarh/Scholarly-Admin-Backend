@@ -184,6 +184,14 @@ public class AdminService {
     }
 
     public String generateToken(String userId) throws Exception{
+
+        // We check if the admin/user exists before we create such token
+        var userExists = userRepository.existsById(userId);
+        if(!userExists){
+            throw new Exception("Admin Doesn't exist");
+        }
+
+
         var env = Dotenv.load();
         var tokenUtil = new JwtTokenUtil();
         tokenUtil.setSecretKey(env.get("STREAM_API_SECRET"));
