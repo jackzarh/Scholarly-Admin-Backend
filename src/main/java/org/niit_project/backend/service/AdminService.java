@@ -56,7 +56,8 @@ public class AdminService {
         }
 
         var loggedInAdmin = gottenAdmin.get();
-        loggedInAdmin.setToken(generateToken(admin.getId()));
+        var token = generateToken(loggedInAdmin.getId());
+        loggedInAdmin.setToken(token);
 
         // We generate the token return it
         return loggedInAdmin;
@@ -132,7 +133,9 @@ public class AdminService {
 
         // Send request
         HttpClient client = HttpClient.newHttpClient();
-        client.send(request, HttpResponse.BodyHandlers.ofString());
+        var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        System.out.println(response.body());
 
 
     }
