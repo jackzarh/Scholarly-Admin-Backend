@@ -117,8 +117,8 @@ public class AdminService {
 
 
         var payload = new HashMap<String, Object>();
-        var userPayload = new HashMap<String, String>();
-        userPayload.put(streamUser.getId(), streamUser.toString());
+        var userPayload = new HashMap<String, Object>();
+        userPayload.put(streamUser.getId(), streamUser);
         payload.put("users", userPayload);
 
         var payloadString = new ObjectMapper().writeValueAsString(payload);
