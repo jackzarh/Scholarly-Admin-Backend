@@ -2,6 +2,7 @@ package org.niit_project.backend.service;
 
 import org.niit_project.backend.entities.Batch;
 import org.niit_project.backend.repository.BatchRepository;
+import org.niit_project.backend.repository.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
