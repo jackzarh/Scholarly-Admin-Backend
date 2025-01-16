@@ -8,7 +8,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
-@Document(collection = "users")
+@Document(collection = "students")
 @Data
 public class Student {
 
@@ -36,10 +36,56 @@ public class Student {
 
     private LocalDateTime createdAt;
 
+    private String token;
+
+    private Colors color;
+
+    private boolean online;
+
+
+
+    private Object counselor;
+
     public Student(){}
+
+    public Colors getColor() {
+        return color == null? Colors.getRandomColor(): color;
+    }
+
+    public void setColor(Colors color) {
+        this.color = color;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public boolean isOnline() {
+        return online;
+    }
+
+    public Object getCounselor() {
+        return counselor;
+    }
+
+    public void setCounselor(Object counselor) {
+        this.counselor = counselor;
+    }
+
+    public void setOnline(boolean online) {
+        this.online = online;
+    }
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public String getFullName(){
+        return firstName + " " + lastName;
     }
 
     public void setCreatedAt(LocalDateTime createdAt) {
@@ -97,6 +143,7 @@ public class Student {
     public String getId() {
         return id;
     }
+
 
     public void setId(String id) {
         this.id = id;

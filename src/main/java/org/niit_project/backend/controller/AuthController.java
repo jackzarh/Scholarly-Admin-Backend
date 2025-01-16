@@ -3,8 +3,11 @@ package org.niit_project.backend.controller;
 import jakarta.validation.Valid;
 import org.niit_project.backend.dto.ApiResponse;
 import org.niit_project.backend.entities.Admin;
+import org.niit_project.backend.entities.Student;
 import org.niit_project.backend.repository.AdminRepository;
+import org.niit_project.backend.repository.StudentRepository;
 import org.niit_project.backend.service.AdminService;
+import org.niit_project.backend.service.StudentService;
 import org.niit_project.backend.utils.PhoneNumberConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -12,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.Optional;
 
 @RestController
@@ -22,6 +24,12 @@ public class AuthController {
 
     @Autowired
     private AdminRepository adminRepository;
+
+    @Autowired
+    private StudentRepository studentRepository;
+
+    @Autowired
+    private StudentService studentService;
 
     @Autowired
     private AdminService adminService;
@@ -91,6 +99,21 @@ public class AuthController {
         return new ResponseEntity<ApiResponse>(response, HttpStatus.NOT_FOUND);
     }
 
+    @PostMapping("student/register")
+    public ResponseEntity<ApiResponse> registerStudent(@Valid @RequestBody Student student){
+        var response = new ApiResponse();
+
+        try{
+            var registeredStudent = studentService.registerStudent(student);
+            response.setMessage("Registered Student Successfully");
+            response.setData(registeredStudent);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            response.setMessage(e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
+        }
+    }
+
     @PostMapping("/login")
     public ResponseEntity<ApiResponse> login(@RequestBody Admin admin) {
         final ApiResponse response = new ApiResponse();
@@ -110,6 +133,21 @@ public class AuthController {
         } catch (Exception e) {
             response.setMessage(e.getMessage());
             return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @PostMapping("student/login")
+    public ResponseEntity<ApiResponse> loginStudent(@RequestBody Student student) {
+        var response = new ApiResponse();
+
+        try{
+            var loggedInStudent = studentService.login(student);
+            response.setMessage("Student Logged In Successfully");
+            response.setData(loggedInStudent);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            response.setMessage(e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
         }
     }
 

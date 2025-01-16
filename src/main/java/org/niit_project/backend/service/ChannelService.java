@@ -28,7 +28,7 @@ public class ChannelService {
     private AdminService adminService;
 
     @Autowired
-    private UserService userService;
+    private StudentService studentService;
 
     @Autowired
     private SideChatService chatService;
@@ -91,14 +91,14 @@ public class ChannelService {
         var channel = channelRepository.findById(id).get();
         var members = channel.getMembers();
 
-        var gottenCreator = adminService.getAdmin(channel.getCreator().toString());
+        var gottenAdminCreator = adminService.getAdmin(channel.getCreator().toString());
 
-        if(gottenCreator.isEmpty()){
-            var student = userService.getCompactStudent(channel.getCreator().toString()).get();
+        if(gottenAdminCreator.isEmpty()){
+            var student = studentService.getCompactStudent(channel.getCreator().toString()).get();
             channel.setCreator(Member.fromStudent(student));
         }
         else{
-            channel.setCreator(Member.fromAdmin(gottenCreator.get()));
+            channel.setCreator(Member.fromAdmin(gottenAdminCreator.get()));
         }
 
         // Aggregation stage to match the members base on their id
@@ -134,7 +134,7 @@ public class ChannelService {
         // Admin or a member
 
         var admin = adminService.getAdmin(userId);
-        var student = userService.getCompactStudent(userId);
+        var student = studentService.getCompactStudent(userId);
 
         // We're using getCompactChannel because it has the id as a String
         var channel = getCompactChannel(channelId);
@@ -208,7 +208,7 @@ public class ChannelService {
         // Admin or a member
 
         var admin = adminService.getAdmin(userId);
-        var student = userService.getCompactStudent(userId);
+        var student = studentService.getCompactStudent(userId);
 
         // We're using getCompactChannel because it has the id as a String
         var channel = getCompactChannel(channelId);
@@ -288,7 +288,7 @@ public class ChannelService {
         var channelExists = channelRepository.findById(channelId);
 
         var admin = adminService.getAdminByEmail(email);
-        var student = userService.getStudentEmail(email);
+        var student = studentService.getStudentEmail(email);
 
         if(admin.isEmpty() && student.isEmpty()){
             throw new Exception("User or Admin doesn't exist");
@@ -344,7 +344,14 @@ public class ChannelService {
 
 
     public Optional<Channel> createChannel(String creatorId, Channel channel){
-        var creator = adminService.getAdmin(creatorId).get();
+        // This way, both students and admins can create channels
+        var admin  = adminService.getAdmin(creatorId);
+        var student = studentService.getCompactStudent(creatorId);
+        if(admin.isEmpty() && student.isEmpty()){
+            return Optional.empty();
+        }
+        var creator = admin.map(Member::fromAdmin).orElseGet(() -> Member.fromStudent(student.get()));
+
         channel.setId(null);
         channel.setCreator(creatorId);
         channel.setMembers(List.of(creatorId));

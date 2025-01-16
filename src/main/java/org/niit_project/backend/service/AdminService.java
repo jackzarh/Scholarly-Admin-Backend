@@ -5,11 +5,9 @@ package org.niit_project.backend.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.cdimascio.dotenv.Dotenv;
 import jakarta.validation.Valid;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.niit_project.backend.entities.Admin;
 import org.niit_project.backend.entities.Colors;
+import org.niit_project.backend.entities.Counselor;
 import org.niit_project.backend.entities.StreamUser;
 import org.niit_project.backend.repository.AdminRepository;
 import org.niit_project.backend.utils.JwtTokenUtil;
@@ -18,7 +16,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 
-import java.awt.*;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -30,7 +27,7 @@ import java.util.List;
 @Service
 public class AdminService {
     @Autowired
-    private AdminRepository userRepository;
+    private AdminRepository adminRepository;
 
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
@@ -45,7 +42,7 @@ public class AdminService {
             throw new Exception("Either Phone Number Or Email must be used");
         }
 
-        gottenAdmin = isEmailLogin? userRepository.findByEmail(admin.getEmail()): userRepository.findByPhoneNumber(admin.getPhoneNumber());
+        gottenAdmin = isEmailLogin? adminRepository.findByEmail(admin.getEmail()): adminRepository.findByPhoneNumber(admin.getPhoneNumber());
 
         if(gottenAdmin.isEmpty()){
             throw new Exception("Admin not found");
@@ -67,16 +64,16 @@ public class AdminService {
     }
 
     public Optional<Admin> getAdmin(String id){
-        return userRepository.findById(id);
+        return adminRepository.findById(id);
     }
 
     public Optional<Admin> getAdminByEmail(String email){
-        return userRepository.findByEmail(email);
+        return adminRepository.findByEmail(email);
     }
 
     public Optional<List<Admin>> getAllAdmins(){
         try{
-            var allAdmins = userRepository.findAll();
+            var allAdmins = adminRepository.findAll();
 
             // We sort the admins in order of their created date
             allAdmins.sort((o1, o2) -> {
@@ -94,7 +91,7 @@ public class AdminService {
         admin.setCreatedAt(LocalDateTime.now());
         admin.setColor(Colors.getRandomColor());
         try{
-            final Admin savedAdmin = userRepository.save(admin);
+            final Admin savedAdmin = adminRepository.save(admin);
             savedAdmin.setToken(generateToken(savedAdmin.getId()));
 
             // We also create a Stream Account for the user
@@ -162,7 +159,7 @@ public class AdminService {
         admin.setProfile(queriedAdmin.getProfile());
 
 
-        return Optional.of(userRepository.save(admin));
+        return Optional.of(adminRepository.save(admin));
     }
 
     public Optional<Admin> updateAdminProfile(String id, String url){
@@ -180,13 +177,13 @@ public class AdminService {
         queriedAdmin.setProfile(url);
 
 
-        return Optional.of(userRepository.save(queriedAdmin));
+        return Optional.of(adminRepository.save(queriedAdmin));
     }
 
     public String generateToken(String userId) throws Exception{
 
         // We check if the admin/user exists before we create such token
-        var userExists = userRepository.existsById(userId);
+        var userExists = adminRepository.existsById(userId);
         if(!userExists){
             throw new Exception("Admin Doesn't exist");
         }
