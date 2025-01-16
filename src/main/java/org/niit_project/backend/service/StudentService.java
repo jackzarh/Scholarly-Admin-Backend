@@ -144,11 +144,11 @@ public class StudentService {
         Optional<Student> gottenStudent = isEmailLogin? studentRepository.findByEmail(student.getEmail()): studentRepository.findByPhoneNumber(student.getPhoneNumber());
 
         if(gottenStudent.isEmpty()){
-            throw new Exception("Admin not found");
+            throw new Exception("Student not found");
         }
 
         if(!passwordEncoder.matches(student.getPassword(), gottenStudent.get().getPassword())){
-            throw new Exception("Invalid Credentials");
+            throw new Exception("Wrong password");
         }
 
         var loggedInStudent = gottenStudent.get();
