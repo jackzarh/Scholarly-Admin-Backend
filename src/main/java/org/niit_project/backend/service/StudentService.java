@@ -70,7 +70,7 @@ public class StudentService {
 
 
         // To get the free-est counselor
-        return results.getLast();
+        return results.get(results.size()-1);
     }
 
     public Student registerStudent(@Valid Student student) throws Exception {
