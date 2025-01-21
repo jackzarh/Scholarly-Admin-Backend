@@ -137,6 +137,10 @@ public class AdminService {
 
     }
 
+    public boolean isAdmin(String adminId){
+        return adminRepository.existsById(adminId);
+    }
+
     public Optional<Admin> updateAdmin(String id, Admin admin){
         /// Only the firstName, lastName are edited.
 

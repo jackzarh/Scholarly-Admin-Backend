@@ -128,6 +128,10 @@ public class StudentService {
         return savedStudent;
     }
 
+    public boolean isStudent(String studentId){
+        return studentRepository.existsById(studentId);
+    }
+
     public Student login(@Valid Student student) throws Exception{
         // Just to convert the phone number properly
         // To +234 format

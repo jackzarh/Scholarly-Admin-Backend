@@ -2,7 +2,6 @@ package org.niit_project.backend.controller;
 
 import org.niit_project.backend.dto.ApiResponse;
 import org.niit_project.backend.service.ChannelService;
-import org.niit_project.backend.service.ChatService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -21,7 +20,7 @@ public class WebSocketChannelController {
         var response = new ApiResponse();
 
         try {
-            var channels = channelService.getAdminChannels(userId);
+            var channels = channelService.getUserChannels(userId);
             response.setMessage("Gotten Channels Successfully");
             response.setData(channels);
             return response;

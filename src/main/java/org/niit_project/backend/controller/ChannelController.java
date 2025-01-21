@@ -5,7 +5,6 @@ import com.cloudinary.utils.ObjectUtils;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.niit_project.backend.dto.ApiResponse;
 import org.niit_project.backend.entities.Channel;
-import org.niit_project.backend.entities.ChannelType;
 import org.niit_project.backend.service.AdminService;
 import org.niit_project.backend.service.ChannelService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Map;
 
 @RestController
@@ -58,7 +56,7 @@ public class ChannelController {
             return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
 
-        var allChannels = channelService.getAdminChannels(id);
+        var allChannels = channelService.getUserChannels(id);
         response.setMessage("Got Admin Channels Successfully");
         response.setData(allChannels);
 
@@ -84,12 +82,6 @@ public class ChannelController {
     public ResponseEntity<ApiResponse> createChannel(@PathVariable String userId, @RequestBody Channel channel){
         var response = new ApiResponse();
 
-        var adminExists = adminService.getAdmin(userId).isPresent();
-
-        if(!adminExists){
-            response.setMessage("Admin Doesn't Exist");
-            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
-        }
 
         if(channel.getChannelName() == null){
             response.setMessage("Channel Name Cannot Be Null");
@@ -104,16 +96,19 @@ public class ChannelController {
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
 
-        var createdChannel = channelService.createChannel(userId,channel);
+        try{
+            var createdChannel = channelService.createChannel(userId,channel);
 
-        if(createdChannel.isEmpty()){
-            response.setMessage("Error occurred when creating channel");
-            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+            response.setMessage("Created Channel Successfully");
+            response.setData(createdChannel);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            response.setMessage(e.getMessage());
+
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
 
-        response.setMessage("Created Channel Successfully");
-        response.setData(createdChannel.get());
-        return new ResponseEntity<>(response, HttpStatus.OK);
+
     }
 
     @PatchMapping("/editChannel/{channelId}")
@@ -121,23 +116,16 @@ public class ChannelController {
 
         var response = new ApiResponse();
 
-        var channelExists = channelService.getOneChannel(channelId).isPresent();
+        try{
+            var savedChannel = channelService.updateChannel(channelId, channel);
 
-        if(!channelExists){
-            response.setMessage("Channel doesn't exist");
+            response.setMessage("Updated Channel Successfully");
+            response.setData(savedChannel);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            response.setMessage(e.getMessage());
             return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
-
-        var savedChannel = channelService.updateChannel(channelId, channel);
-
-        if(savedChannel.isEmpty()){
-            response.setMessage("Error when editing channel");
-            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
-        }
-
-        response.setMessage("Updated Channel Successfully");
-        response.setData(savedChannel.get());
-        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PatchMapping(path = "/updateChannelProfile/{channelId}", consumes = "multipart/form-data")

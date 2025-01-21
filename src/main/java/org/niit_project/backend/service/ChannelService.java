@@ -50,9 +50,9 @@ public class ChannelService {
         }
     }
 
-    public List<Channel> getAdminChannels(String adminId){
+    public List<Channel> getUserChannels(String userId){
 
-        var matchAggregation = Aggregation.match(Criteria.where("members").in(adminId));
+        var matchAggregation = Aggregation.match(Criteria.where("members").in(userId));
         var sortAggregation = Aggregation.sort(Sort.by(Sort.Direction.DESC, "createdAt"));
         var aggregation = Aggregation.newAggregation(matchAggregation, sortAggregation);
 
@@ -72,7 +72,7 @@ public class ChannelService {
             /// We get the last message of the chat and if it's empty we set it to null
             /// And also set the unread messages of the chat.
             channel.setLatestMessage(chatService.getLastChat(channel.getId()).orElse(null));
-            channel.setUnreadMessages(chatService.getUnseenChatsCount(channel.getId(), adminId));
+            channel.setUnreadMessages(chatService.getUnseenChatsCount(channel.getId(), userId));
         }).toList();
         var sorted = formed.stream().sorted((channel1, channel2) -> (channel2.getLatestMessage() != null ? channel2.getLatestMessage().getTimestamp() : channel2.getCreatedAt()).compareTo((channel1.getLatestMessage() != null? channel1.getLatestMessage().getTimestamp(): channel1.getCreatedAt()))).toList();
 
@@ -276,7 +276,7 @@ public class ChannelService {
         }
 
         // To send to the one that left, his/her updated list of channels that he/she is subscribed to
-        var channelResponse = new ApiResponse("You Left A Channel", getAdminChannels(userId));
+        var channelResponse = new ApiResponse("You Left A Channel", getUserChannels(userId));
         messagingTemplate.convertAndSend("/channels/" + channelId, channelResponse);
 
 
@@ -343,13 +343,14 @@ public class ChannelService {
     }
 
 
-    public Optional<Channel> createChannel(String creatorId, Channel channel){
+    public Channel createChannel(String creatorId, Channel channel) throws Exception{
         // This way, both students and admins can create channels
         var admin  = adminService.getAdmin(creatorId);
         var student = studentService.getCompactStudent(creatorId);
         if(admin.isEmpty() && student.isEmpty()){
-            return Optional.empty();
+            throw new Exception("Admin or Student not found");
         }
+
         var creator = admin.map(Member::fromAdmin).orElseGet(() -> Member.fromStudent(student.get()));
 
         channel.setId(null);
@@ -358,48 +359,44 @@ public class ChannelService {
         channel.setCreatedAt(LocalDateTime.now());
         channel.setColor(Colors.getRandomColor().name());
 
-        try{
-            var createdChannel = channelRepository.save(channel);
+        var createdChannel = channelRepository.save(channel);
 
-            // If the channel was created. We want to send a chat indicating
-            // That the channel was created
-            var chat = new Chat();
-            chat.setChannelId(createdChannel.getId());
-            chat.setSenderProfile(creator.getProfile());
-            chat.setSenderId(creatorId);
-            chat.setTimestamp(LocalDateTime.now());
-            chat.setMessageType(MessageType.create);
-            chat.setMessage(creator.getFirstName() + " created Channel '" + channel.getChannelName() + "'.");
-            chat.setReadReceipt(List.of(creatorId));
-            var createdChat = chatRepository.save(chat);
+        // If the channel was created. We want to send a chat indicating
+        // That the channel was created
+        var chat = new Chat();
+        chat.setChannelId(createdChannel.getId());
+        chat.setSenderProfile(creator.getProfile());
+        chat.setSenderId(creatorId);
+        chat.setTimestamp(LocalDateTime.now());
+        chat.setMessageType(MessageType.create);
+        chat.setMessage(creator.getFirstName() + " created Channel '" + channel.getChannelName() + "'.");
+        chat.setReadReceipt(List.of(creatorId));
+        var createdChat = chatRepository.save(chat);
 
-            var notification = new Notification();
-            notification.setCategory(NotificationCategory.channel);
-            notification.setTitle("Channel Created");
-            notification.setContent("You created channel '" + channel.getChannelName() + "'");
-            notification.setTarget(createdChannel.getId());
-            notification.setUserId(creatorId);
-            notificationService.sendNotification(notification);
-
-
-            /// To update the websocket that a new chat has been added
-            var chatsResponse = new ApiResponse("Channel Created", createdChat);
-            messagingTemplate.convertAndSend("/chats/" + createdChannel.getId(), chatsResponse);
+        var notification = new Notification();
+        notification.setCategory(NotificationCategory.channel);
+        notification.setTitle("Channel Created");
+        notification.setContent("You created channel '" + channel.getChannelName() + "'");
+        notification.setTarget(createdChannel.getId());
+        notification.setUserId(creatorId);
+        notificationService.sendNotification(notification);
 
 
-            var fetchedChannel = getOneChannel(channel.getId()).get();
-            fetchedChannel.setLatestMessage(createdChat);
-            fetchedChannel.setUnreadMessages(0);
-            var createdChannelResponse = new ApiResponse("Channel Created Successfully", fetchedChannel);
-            messagingTemplate.convertAndSend("/channels/" + creatorId, createdChannelResponse);
-            return Optional.of(fetchedChannel);
-        } catch (Exception e) {
-            return Optional.empty();
-        }
+        /// To update the websocket that a new chat has been added
+        var chatsResponse = new ApiResponse("Channel Created", createdChat);
+        messagingTemplate.convertAndSend("/chats/" + createdChannel.getId(), chatsResponse);
+
+
+        var fetchedChannel = getOneChannel(channel.getId()).get();
+        fetchedChannel.setLatestMessage(createdChat);
+        fetchedChannel.setUnreadMessages(0);
+        var createdChannelResponse = new ApiResponse("Channel Created Successfully", fetchedChannel);
+        messagingTemplate.convertAndSend("/channels/" + creatorId, createdChannelResponse);
+        return fetchedChannel;
 
     }
 
-    public Optional<Channel> updateChannel(String channelId, Channel channel){
+    public Channel updateChannel(String channelId, Channel channel) throws Exception{
         // Only Channel name and Channel Description are edited;
 
         /// Intentionally using the repository's findById method instead
@@ -410,10 +407,8 @@ public class ChannelService {
         var gottenChannelExists = channelRepository.findById(channelId);
 
         if(gottenChannelExists.isEmpty()){
-            return Optional.empty();
+            throw new Exception("Channel does not exist");
         }
-
-
 
         var gottenChannel = gottenChannelExists.get();
         gottenChannel.setChannelName(channel.getChannelName());
@@ -464,7 +459,7 @@ public class ChannelService {
             }
         }
 
-        return Optional.of(fetchedChannel);
+        return fetchedChannel;
     }
 
     public Optional<Channel> updateChannelProfile(String channelId, String url){
