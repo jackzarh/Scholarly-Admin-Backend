@@ -29,7 +29,7 @@ public class WebSocketEventListener {
         // The broker destination being subscribed to
 
         assert destination != null;
-        if(destination.startsWith("admins/") ){
+        if(destination.startsWith("/admins") || destination.contains("admins")){
             handleAdminSubscription(subscriptionId, false);
             return;
         }
@@ -44,7 +44,7 @@ public class WebSocketEventListener {
         String subscriptionId = headerAccessor.getSubscriptionId();
 
         assert destination != null;
-        if(destination.startsWith("admins/") ){
+        if(destination.startsWith("/admins") || destination.contains("admins")){
             handleAdminSubscription(subscriptionId, true);
             return;
         }
