@@ -27,6 +27,9 @@ public class ChatService {
     private AdminService adminService;
 
     @Autowired
+    private StudentService studentService;
+
+    @Autowired
     private ChannelService channelService;
 
     @Autowired

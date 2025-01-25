@@ -63,7 +63,8 @@ public class ChannelService {
             var adminMembers = mongoTemplate.aggregate(membersAggregation, "admins", Admin.class).getMappedResults();
 
             //Then collate all members
-            var allMembers = new ArrayList<>(studentMembers.stream().map(Member::fromStudent).toList());
+            var allMembers = new ArrayList<Member>();
+            allMembers.addAll(studentMembers.stream().map(Member::fromStudent).toList());
             allMembers.addAll(adminMembers.stream().map(Member::fromAdmin).toList());
             channel.setMembers(Arrays.asList(allMembers.toArray()));
             var creator = allMembers.stream().filter(member -> member.getId().equals(channel.getCreator())).findFirst().orElse(allMembers.isEmpty()? null: allMembers.get(0));
@@ -104,7 +105,7 @@ public class ChannelService {
         // Aggregation stage to match the members base on their id
         var membersMatch = Aggregation.match(Criteria.where("_id").in(members));
         var aggregations = Aggregation.newAggregation(membersMatch);
-        var studentMembers = mongoTemplate.aggregate(aggregations, "users", Student.class).getMappedResults();
+        var studentMembers = mongoTemplate.aggregate(aggregations, "students", Student.class).getMappedResults();
         var adminMembers = mongoTemplate.aggregate(aggregations, "admins", Admin.class).getMappedResults();
 
         //Then collate all members
@@ -387,7 +388,7 @@ public class ChannelService {
         messagingTemplate.convertAndSend("/chats/" + createdChannel.getId(), chatsResponse);
 
 
-        var fetchedChannel = getOneChannel(channel.getId()).get();
+        var fetchedChannel = getOneChannel(createdChannel.getId()).get();
         fetchedChannel.setLatestMessage(createdChat);
         fetchedChannel.setUnreadMessages(0);
         var createdChannelResponse = new ApiResponse("Channel Created Successfully", fetchedChannel);

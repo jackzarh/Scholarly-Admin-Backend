@@ -49,12 +49,12 @@ public class ChannelController {
     @GetMapping("/getAllAdminChannels/{id}")
     public ResponseEntity<ApiResponse> getAllAdminChannels(@PathVariable String id){
         var response = new ApiResponse();
-        var adminExists = adminService.getAdmin(id).isPresent();
-
-        if(!adminExists){
-            response.setMessage("Admin does not exist");
-            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
-        }
+//        var adminExists = adminService.getAdmin(id).isPresent();
+//
+//        if(!adminExists){
+//            response.setMessage("Admin does not exist");
+//            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+//        }
 
         var allChannels = channelService.getUserChannels(id);
         response.setMessage("Got Admin Channels Successfully");
