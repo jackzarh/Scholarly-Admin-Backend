@@ -59,7 +59,7 @@ public class ChannelService {
         var results = mongoTemplate.aggregate(aggregation, "channels", Channel.class).getMappedResults();
         var formed = results.stream().peek(channel -> {
             var membersAggregation = Aggregation.newAggregation(Aggregation.match(Criteria.where("_id").in(channel.getMembers())));
-            var studentMembers = mongoTemplate.aggregate(membersAggregation, "users", Student.class).getMappedResults();
+            var studentMembers = mongoTemplate.aggregate(membersAggregation, "students", Student.class).getMappedResults();
             var adminMembers = mongoTemplate.aggregate(membersAggregation, "admins", Admin.class).getMappedResults();
 
             //Then collate all members
