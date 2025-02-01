@@ -1,5 +1,6 @@
 package org.niit_project.backend.service;
 
+import org.niit_project.backend.dto.ApiResponse;
 import org.niit_project.backend.entities.*;
 import org.niit_project.backend.repository.AnnouncementRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,7 +89,11 @@ public class AnnouncementService {
 
 
         /// Send Notification To All The Audience
+        /// And Send the Announcement to all the websockets of the audience
         var notification = new Notification();
+        var response = new ApiResponse();
+        response.setMessage("New Announcement");
+        response.setData(createdAnnouncement);
         notification.setTitle(announcement.getAnnouncementTitle());
         notification.setContent(announcement.getAnnouncementDescription());
         notification.setCategory(NotificationCategory.announcement);
@@ -108,6 +113,8 @@ public class AnnouncementService {
         for(final String user : audienceList){
             notification.setUserId(user);
             notificationService.sendNotification(notification);
+
+            messagingTemplate.convertAndSend("/announcements/"+user,response);
         }
 
         return createdAnnouncement;
