@@ -38,6 +38,9 @@ public class Batch {
         this.batchName = batchName;
     }
 
+    public Batch(String id, String batchName, Object course, LocalDate startPeriod, LocalDate endPeriod) {
+    }
+
     public List<Object> getCandidates() {
         return candidates;
     }

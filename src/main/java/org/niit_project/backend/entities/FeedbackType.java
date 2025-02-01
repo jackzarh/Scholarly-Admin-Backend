@@ -1,2 +1,6 @@
-package org.niit_project.backend.entities;public enum FeedbackType {
+package org.niit_project.backend.entities;
+
+public enum FeedbackType {
+    REGULAR,
+    REPORT
 }
