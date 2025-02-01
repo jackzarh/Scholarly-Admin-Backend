@@ -93,7 +93,7 @@ public class AnnouncementService {
         var notification = new Notification();
         var response = new ApiResponse();
         response.setMessage("New Announcement");
-        response.setData(createdAnnouncement);
+        response.setData(getOneAnnouncement(createdAnnouncement.getId()));
         notification.setTitle(announcement.getAnnouncementTitle());
         notification.setContent(announcement.getAnnouncementDescription());
         notification.setCategory(NotificationCategory.announcement);
@@ -163,6 +163,23 @@ public class AnnouncementService {
         }
 
         var saveAnnoucement = announcementRepository.save(gottenAnnouncement);
+
+        var response = new ApiResponse();
+        response.setMessage("New Announcement");
+        response.setData(getOneAnnouncement(saveAnnoucement.getId()));
+        var audienceList = new ArrayList<>(announcement.getAudience().stream().map(o -> o.toString()).toList());
+        if(announcement.getAudience().isEmpty()){
+            var allAdmins = mongoTemplate.findAll(Admin.class, "admins");
+            var allStudents = mongoTemplate.findAll(Student.class, "students");
+
+            var allUsers = new ArrayList<>(allAdmins.stream().map(Admin::getId).toList());
+            allUsers.addAll(allStudents.stream().map(Student::getId).toList());
+
+            audienceList.addAll(allUsers);
+        }
+        for(final String user : audienceList){
+            messagingTemplate.convertAndSend("/announcements/"+user,response);
+        }
         return saveAnnoucement;
     }
 }

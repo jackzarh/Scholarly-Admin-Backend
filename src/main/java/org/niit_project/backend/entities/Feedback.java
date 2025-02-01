@@ -22,21 +22,20 @@ public class Feedback {
     private Object perpetrator;
     //change to object
 
-    private String reporterName;
+    private Object reporter;
     //change to object
 
-    private Boolean isAnonymous;
+    private Boolean anonymous;
 
     private LocalDateTime createdAt;
 
-    public Feedback(String id, FeedbackType type, String description, String evidenceUrl, Member perpetrator, String reporterName, Boolean isAnonymous, LocalDateTime createdAt) {
+    public Feedback(String id, FeedbackType type, String description, String evidenceUrl, Member perpetrator, Boolean isAnonymous, LocalDateTime createdAt) {
         this.id = id;
         this.type = type;
         this.description = description;
         this.evidenceUrl = evidenceUrl;
         this.perpetrator = perpetrator;
-        this.reporterName = reporterName;
-        this.isAnonymous = isAnonymous;
+        this.anonymous = isAnonymous;
         this.createdAt = createdAt;
     }
 
@@ -80,20 +79,20 @@ public class Feedback {
         this.perpetrator = perpetrator;
     }
 
-    public String getReporterName() {
-        return reporterName;
-    }
-
-    public void setReporterName(String reporterName) {
-        this.reporterName = reporterName;
-    }
-
     public Boolean getAnonymous() {
-        return isAnonymous;
+        return anonymous;
+    }
+
+    public Object getReporter() {
+        return reporter;
+    }
+
+    public void setReporter(Object reporter) {
+        this.reporter = reporter;
     }
 
     public void setAnonymous(Boolean anonymous) {
-        isAnonymous = anonymous;
+        this.anonymous = anonymous;
     }
 
     public LocalDateTime getCreatedAt() {

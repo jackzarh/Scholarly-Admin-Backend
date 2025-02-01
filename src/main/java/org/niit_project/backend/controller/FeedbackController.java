@@ -8,6 +8,7 @@ import org.niit_project.backend.entities.Feedback;
 import org.niit_project.backend.service.FeedbackService;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,55 +24,91 @@ public class FeedbackController {
     @Autowired
     private FeedbackService feedbackService;
 
-    @PostMapping
-    public ResponseEntity<Feedback> createFeedback(@RequestBody Feedback feedback) {
-        Feedback createdFeedback = feedbackService.createFeedback(feedback);
-        return ResponseEntity.status(201).body(createdFeedback);
+    @PostMapping("/createFeedback")
+    public ResponseEntity<ApiResponse> createFeedback(@RequestBody Feedback feedback) {
+        var response = new ApiResponse();
+
+        try{
+            Feedback createdFeedback = feedbackService.createFeedback(feedback);
+            response.setMessage("Created Feedback");
+            response.setData(createdFeedback);
+
+            return new ResponseEntity<>(response,HttpStatus.OK);
+
+        }
+        catch (Exception e) {
+            response.setMessage(e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Feedback> getFeedback(@PathVariable String id) {
-        Optional<Feedback> feedback = feedbackService.getFeedbackById(id);
-        return feedback.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    @GetMapping("/getOneFeedback/{id}")
+    public ResponseEntity<ApiResponse> getOneFeedback(@PathVariable String id) {
+        var response = new ApiResponse();
+
+        try{
+            var feedback = feedbackService.getOneFeedback(id);
+            response.setMessage("Gotten Feedback");
+            response.setData(feedback);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            response.setMessage(e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Feedback> updateFeedback(@PathVariable String id, @RequestBody Feedback feedback) {
-        Optional<Feedback> updatedFeedback = feedbackService.updateFeedback(id, feedback);
-        return updatedFeedback.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    @PutMapping("/updateFeedback/{id}")
+    public ResponseEntity<ApiResponse> updateFeedback(@PathVariable String id, @RequestBody Feedback feedback) {
+        var response = new ApiResponse();
+
+        try{
+            Feedback updatedFeedback = feedbackService.updateFeedback(id,feedback);
+            response.setMessage("Updated Feedback");
+            response.setData(updatedFeedback);
+
+            return new ResponseEntity<>(response,HttpStatus.OK);
+
+        }
+        catch (Exception e) {
+            response.setMessage(e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
     }
 
-    @GetMapping("/compact")
-    public ResponseEntity<List<FeedbackDTO>> getCompactFeedbacks() {
-        List<FeedbackDTO> compactFeedbacks = feedbackService.getCompactFeedbacks();
-        return ResponseEntity.ok(compactFeedbacks);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteFeedback(@PathVariable String id) {
+    @DeleteMapping("/deleteFeedback/{id}")
+    public ResponseEntity<ApiResponse> deleteFeedback(@PathVariable String id) {
         feedbackService.deleteFeedback(id);
-        return ResponseEntity.noContent().build();
+        return new ResponseEntity<>(new ApiResponse("Deleted", null), HttpStatus.OK);
     }
 
-    @GetMapping
-    public ResponseEntity<Iterable<Feedback>> getAllFeedbacks() {
-        Iterable<Feedback> feedbacks = feedbackService.getAllFeedbacks();
-        return ResponseEntity.ok(feedbacks);
+    @GetMapping("/getFeedbacks")
+    public ResponseEntity<ApiResponse> getAllFeedbacks() {
+        var response = new ApiResponse();
+
+        try{
+            var feedbacks = feedbackService.getAllFeedbacks();
+            response.setMessage("Got Feedbacks");
+            response.setData(feedbacks);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            response.setMessage(e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
     }
 
-    @PostMapping("/{id}/uploadImage")
-    public ResponseEntity<String> uploadImageForFeedback(@PathVariable String id, @RequestPart("file") MultipartFile file) {
+    @PostMapping("/uploadImage/{id}")
+    public ResponseEntity<ApiResponse> uploadImageForFeedback(@PathVariable String id, @RequestPart("file") MultipartFile file) {
         ApiResponse response = new ApiResponse();
         var feedback = feedbackService.getFeedbackById(id);
 
         if (feedback.isEmpty()) {
             response.setMessage("Feedback doesn't exist");
-            return ResponseEntity.status(404).body("Feedback not found");
+            return ResponseEntity.status(404).body(response);
         }
 
         if (file == null || file.isEmpty()) {
             response.setMessage("File should not be empty");
-            return ResponseEntity.status(400).body("File should not be empty");
+            return ResponseEntity.status(400).body(response);
         }
 
         try {
@@ -87,10 +124,6 @@ public class FeedbackController {
             var result = cloudinary.uploader().upload(file.getBytes(), params);
             var secureUrl = result.get("secure_url").toString().trim();
 
-            // After successful upload, update the feedback record with the image URL
-            feedback.get().setImageUrl(secureUrl);
-            feedbackService.updateFeedback(id, feedback.get());
-
             // Update the feedback record
             Feedback existingFeedback = feedback.get();
             existingFeedback.setImageUrl(secureUrl); // Ensure it updates the evidenceUrl field
@@ -98,10 +131,10 @@ public class FeedbackController {
 
             response.setMessage("Image uploaded successfully");
             response.setData(secureUrl);
-            return ResponseEntity.status(200).body("Image uploaded successfully: " + secureUrl);
-        } catch (IOException e) {
+            return ResponseEntity.status(200).body(response);
+        } catch (Exception e) {
             response.setMessage("Error uploading file: " + e.getMessage());
-            return ResponseEntity.status(500).body("Error uploading image");
+            return ResponseEntity.status(500).body(response);
         }
     }
 }
