@@ -1,6 +1,8 @@
 package org.niit_project.backend.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.getstream.models.UpdateUsersRequest;
+import io.getstream.services.framework.StreamSDKClient;
 import io.github.cdimascio.dotenv.Dotenv;
 import jakarta.validation.Valid;
 import org.niit_project.backend.dto.ApiResponse;
@@ -28,6 +30,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -38,6 +41,9 @@ public class StudentService {
 
     @Autowired
     private MongoTemplate mongoTemplate;
+
+    @Autowired
+    private StreamSDKClient client;
 
 
     @Autowired
@@ -165,17 +171,20 @@ public class StudentService {
 
     public String generateToken(String userId) throws Exception{
 
-        // We check if the student exists before we create such token
+        // We check if the admin/user exists before we create such token
         var userExists = studentRepository.existsById(userId);
         if(!userExists){
             throw new Exception("Student Doesn't exist");
         }
 
 
-        var env = Dotenv.load();
-        var tokenUtil = new JwtTokenUtil();
-        tokenUtil.setSecretKey(env.get("STREAM_API_SECRET"));
-        return tokenUtil.generateToken(userId);
+//        var env = Dotenv.load();
+//        var tokenUtil = new JwtTokenUtil();
+//        tokenUtil.setSecretKey(env.get("STREAM_API_SECRET"));
+//        return tokenUtil.generateToken(userId);
+
+        // 24 hour expiration
+        return client.tokenBuilder().createToken(userId, 60 * 60 * 24);
 
 
 //        try {
@@ -214,33 +223,17 @@ public class StudentService {
     }
 
     public void createStreamUser(Student student) throws Exception{
-        var env = Dotenv.load();
         var streamUser = new StreamUser();
         streamUser.setId(student.getId());
         streamUser.setName(student.getFullName());
         streamUser.setColor(student.getColor());
 
 
-        var payload = new HashMap<String, Object>();
-        var userPayload = new HashMap<String, Object>();
-        userPayload.put(streamUser.getId(), streamUser);
-        payload.put("users", userPayload);
-
-        var payloadString = new ObjectMapper().writeValueAsString(payload);
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://video.stream-io-api.com/api/v2/users?api_key=" + env.get("STREAM_API_KEY")))
-                .header("Content-Type", "application/json")
-                .header("stream-auth-type", "jwt")
-                .header("Authorization", env.get("STREAM_API_TOKEN"))
-                .POST(HttpRequest.BodyPublishers.ofString(payloadString))
-                .build();
-
-        // Send request
-        HttpClient client = HttpClient.newHttpClient();
-        var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-        System.out.println(response.body());
+        var response = client.updateUsers(
+                UpdateUsersRequest.builder()
+                        .users(Map.of(student.getId(), streamUser.toUserRequest()))
+                        .build()
+        ).execute();
 
 
     }

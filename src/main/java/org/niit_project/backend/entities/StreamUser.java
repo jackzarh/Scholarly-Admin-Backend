@@ -1,7 +1,10 @@
 package org.niit_project.backend.entities;
 
+import io.getstream.models.UserRequest;
 import lombok.Data;
 import org.springframework.data.annotation.Transient;
+
+import java.util.Map;
 
 @Data
 public class StreamUser {
@@ -44,6 +47,15 @@ public class StreamUser {
 
     public String getImage() {
         return image;
+    }
+
+    public UserRequest toUserRequest(){
+        return UserRequest.builder()
+                .id(id)
+                .name(name)
+                .image(image)
+                .role(role.toLowerCase())
+                .custom(Map.of("color",custom.getColor().name().toLowerCase())).build();
     }
 
     public void setImage(String image) {

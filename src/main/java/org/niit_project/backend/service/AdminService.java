@@ -3,8 +3,12 @@ package org.niit_project.backend.service;
 
 //import im.zego.serverassistant.sample.Token04SampleBase;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.getstream.models.UpdateUsersRequest;
+import io.getstream.models.UserRequest;
+import io.getstream.services.framework.StreamSDKClient;
 import io.github.cdimascio.dotenv.Dotenv;
 import jakarta.validation.Valid;
+import org.niit_project.backend.config.StreamClientConfig;
 import org.niit_project.backend.entities.Admin;
 import org.niit_project.backend.entities.Colors;
 import org.niit_project.backend.entities.Counselor;
@@ -31,6 +35,9 @@ public class AdminService {
 
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
+
+    @Autowired
+    private StreamSDKClient client;
 
 
     public Admin login(Admin admin) throws Exception {
@@ -105,35 +112,22 @@ public class AdminService {
         }
     }
 
+    /**
+     * Used to either create or update a User
+     * @param admin
+     * @throws Exception
+     */
     public void createStreamUser(Admin admin) throws Exception{
-        var env = Dotenv.load();
         var streamUser = new StreamUser();
         streamUser.setId(admin.getId());
         streamUser.setName(admin.getFullName());
         streamUser.setColor(admin.getColor());
 
-
-        var payload = new HashMap<String, Object>();
-        var userPayload = new HashMap<String, Object>();
-        userPayload.put(streamUser.getId(), streamUser);
-        payload.put("users", userPayload);
-
-        var payloadString = new ObjectMapper().writeValueAsString(payload);
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://video.stream-io-api.com/api/v2/users?api_key=" + env.get("STREAM_API_KEY")))
-                .header("Content-Type", "application/json")
-                .header("stream-auth-type", "jwt")
-                .header("Authorization", env.get("STREAM_API_TOKEN"))
-                .POST(HttpRequest.BodyPublishers.ofString(payloadString))
-                .build();
-
-        // Send request
-        HttpClient client = HttpClient.newHttpClient();
-        var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-        System.out.println(response.body());
-
+        var response = client.updateUsers(
+                UpdateUsersRequest.builder()
+                        .users(Map.of(admin.getId(), streamUser.toUserRequest()))
+                        .build()
+        ).execute();
 
     }
 
@@ -141,7 +135,7 @@ public class AdminService {
         return adminRepository.existsById(adminId);
     }
 
-    public Optional<Admin> updateAdmin(String id, Admin admin){
+    public Optional<Admin> updateAdmin(String id, Admin admin) {
         /// Only the firstName, lastName are edited.
 
 
@@ -162,8 +156,15 @@ public class AdminService {
         admin.setRole(queriedAdmin.getRole());
         admin.setProfile(queriedAdmin.getProfile());
 
+        var savedAdmin = adminRepository.save(admin);
+        try {
+            createStreamUser(admin);
+        } catch (Exception e) {
+            return Optional.empty();
+        }
 
-        return Optional.of(adminRepository.save(admin));
+
+        return Optional.of(savedAdmin);
     }
 
     public Optional<Admin> updateAdminProfile(String id, String url){
@@ -193,10 +194,13 @@ public class AdminService {
         }
 
 
-        var env = Dotenv.load();
-        var tokenUtil = new JwtTokenUtil();
-        tokenUtil.setSecretKey(env.get("STREAM_API_SECRET"));
-        return tokenUtil.generateToken(userId);
+//        var env = Dotenv.load();
+//        var tokenUtil = new JwtTokenUtil();
+//        tokenUtil.setSecretKey(env.get("STREAM_API_SECRET"));
+//        return tokenUtil.generateToken(userId);
+
+        // 24 hour expiration
+        return client.tokenBuilder().createToken(userId, 60 * 60 * 24);
 
 
 //        try {

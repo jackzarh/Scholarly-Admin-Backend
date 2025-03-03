@@ -63,29 +63,37 @@
 		</dependency>
 
 		<!--	JWT Sdk Dependencies	-->
+<!--		<dependency>-->
+<!--			<groupId>io.jsonwebtoken</groupId>-->
+<!--			<artifactId>jjwt-api</artifactId>-->
+<!--			<version>0.11.5</version>-->
+<!--		</dependency>-->
+<!--		<dependency>-->
+<!--			<groupId>io.jsonwebtoken</groupId>-->
+<!--			<artifactId>jjwt-impl</artifactId>-->
+<!--			<version>0.11.5</version>-->
+<!--			<scope>runtime</scope> &lt;!&ndash; Use runtime scope to avoid including implementation details in compile-time dependencies &ndash;&gt;-->
+<!--		</dependency>-->
+<!--		<dependency>-->
+<!--			<groupId>io.jsonwebtoken</groupId>-->
+<!--			<artifactId>jjwt-jackson</artifactId> &lt;!&ndash; Use jjwt-gson if you prefer Gson over Jackson &ndash;&gt;-->
+<!--			<version>0.11.5</version>-->
+<!--			<scope>runtime</scope>-->
+<!--		</dependency>-->
+
+<!--		<dependency>-->
+<!--			<groupId>com.googlecode.json-simple</groupId>-->
+<!--			<artifactId>json-simple</artifactId>-->
+<!--			<version>1.1.1</version>-->
+<!--		</dependency>-->
+
+		<!--	Video Calling Dependencies	-->
 		<dependency>
-			<groupId>io.jsonwebtoken</groupId>
-			<artifactId>jjwt-api</artifactId>
-			<version>0.11.5</version>
-		</dependency>
-		<dependency>
-			<groupId>io.jsonwebtoken</groupId>
-			<artifactId>jjwt-impl</artifactId>
-			<version>0.11.5</version>
-			<scope>runtime</scope> <!-- Use runtime scope to avoid including implementation details in compile-time dependencies -->
-		</dependency>
-		<dependency>
-			<groupId>io.jsonwebtoken</groupId>
-			<artifactId>jjwt-jackson</artifactId> <!-- Use jjwt-gson if you prefer Gson over Jackson -->
-			<version>0.11.5</version>
-			<scope>runtime</scope>
+			<groupId>io.getstream</groupId>
+			<artifactId>stream-sdk-java</artifactId>
+			<version>1.0.0</version>
 		</dependency>
 
-		<dependency>
-			<groupId>com.googlecode.json-simple</groupId>
-			<artifactId>json-simple</artifactId>
-			<version>1.1.1</version>
-		</dependency>
 
 
 

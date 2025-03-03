@@ -11,5 +11,8 @@ public enum MessageType {
     member,
 
     // If a channel was created
-    create
+    create,
+
+    // If such a chat is a call
+    call,
 }
