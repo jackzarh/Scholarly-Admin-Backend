@@ -6,6 +6,7 @@ import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 
 @Data
@@ -14,9 +15,10 @@ public class DirectMessage {
     @Id
     private String id;
 
+    @Transient
     private String name,profile,color;
 
-    private List<String> recipients;
+    private List<Object> recipients;
 
     @Transient
     private Chat latestMessage;
@@ -52,7 +54,7 @@ public class DirectMessage {
 
         // This way we're checking to always return a List of the recipient's ids whether,
         // the channel has it as a List of String or Members.
-        dm.setRecipients(channel.getMembers().stream().map(member -> member instanceof Member? ((Member)member).getId(): member.toString()).toList());
+        dm.setRecipients(Collections.singletonList(channel.getMembers().stream().map(member -> member instanceof Member ? ((Member) member).getId() : member.toString()).toList()));
         return dm;
     }
 
@@ -82,11 +84,11 @@ public class DirectMessage {
         this.id = id;
     }
 
-    public List<String> getRecipients() {
+    public List<Object> getRecipients() {
         return recipients;
     }
 
-    public void setRecipients(List<String> recipients) {
+    public void setRecipients(List<Object> recipients) {
         this.recipients = recipients;
     }
 
@@ -131,7 +133,7 @@ public class DirectMessage {
     }
 
     public LocalDateTime getTime() {
-        return time;
+        return latestMessage == null? time: latestMessage.getTimestamp();
     }
 
     public void setTime(LocalDateTime time) {

@@ -1,9 +1,7 @@
 package org.niit_project.backend.service;
 
 import org.niit_project.backend.dto.ApiResponse;
-import org.niit_project.backend.entities.Channel;
-import org.niit_project.backend.entities.Community;
-import org.niit_project.backend.entities.DirectMessage;
+import org.niit_project.backend.entities.*;
 import org.niit_project.backend.repository.DirectMessageRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -14,6 +12,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -34,26 +34,12 @@ public class DirectMessageService {
         var matchAggregation = Aggregation.match(Criteria.where("recipients").in(userId));
         var ordinaryDMsList = mongoTemplate.aggregate(Aggregation.newAggregation(matchAggregation),"direct messages", DirectMessage.class).getMappedResults();
 
-        var dms = ordinaryDMsList.stream().peek(directMessage -> {
-            // First of all, we set the last chat of the DM.
-            var lastChatOption = sideChatService.getLastChat(directMessage.getId());
-            directMessage.setLatestMessage(lastChatOption.orElse(null));
-            directMessage.setUnreadMessages(sideChatService.getUnseenChatsCount(directMessage.getId(), userId));
-
-            // Then, we check if it's a community dm.
-            // If the DM is a community, we have to include the communities basic snapshot data like
-            // name, color, photo etc.
-            var isCommunityDM = directMessage.getRecipients().size() > 2;
-            if(!isCommunityDM){
-                return;
+        var dms = ordinaryDMsList.stream().map(directMessage -> {
+            try {
+                return getOneDirectMessage(directMessage.getId(), userId);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
-
-            var channelOfThisDM = mongoTemplate.findById(directMessage.getId(), Channel.class, "channels");
-            if(channelOfThisDM == null){
-                return;
-            }
-            var community = mongoTemplate.findById(channelOfThisDM.getCommunityId(), Community.class, "communities");
-            directMessage.setCommunity(community);
         }).toList();
         dms.sort((o1, o2) -> o2.getTime().compareTo(o1.getTime()));
 
@@ -64,21 +50,21 @@ public class DirectMessageService {
      * Service method to create DMs.
      * Validation checks are first of all made before saving to DB.
      * After it's saved to the DM, the DM is sent to the websocket of all recipients.
-     * @param dm the direct message. Must have at a {@code name}, {@code color} and at least {@code 1 recipient}
+     * @param dm the direct message. Must have at least {@code a recipient}
      * @throws Exception throws exceptions if these conditions are not met or an unprecedented error occurred.
      */
     public DirectMessage createDirectMessage(DirectMessage dm) throws Exception{
         // Dms should have names
-        if(dm.getName() == null){
-            throw new Exception("Direct Message must have a name");
-        }
+//        if(dm.getName() == null){
+//            throw new Exception("Direct Message must have a name");
+//        }
 
         // DMs should have at least a color
-        if(dm.getProfile() == null){
-            if(dm.getColor() == null){
-                throw new Exception("DM must have at least a color");
-            }
-        }
+//        if(dm.getProfile() == null){
+//            if(dm.getColor() == null){
+//                throw new Exception("DM must have at least a color");
+//            }
+//        }
 
         //DMs should have at least 1 recipient
         if(dm.getRecipients() == null || dm.getRecipients().isEmpty()){
@@ -146,7 +132,7 @@ public class DirectMessageService {
 
         var response = new ApiResponse("Updated Direct Message", updatedDM);
         for(var recipient: updatedDM.getRecipients()){
-            updatedDM.setUnreadMessages(sideChatService.getUnseenChatsCount(dmId, recipient));
+            updatedDM.setUnreadMessages(sideChatService.getUnseenChatsCount(dmId, recipient.toString()));
             messagingTemplate.convertAndSend("/dms/"+recipient, response);
         }
 
@@ -154,20 +140,31 @@ public class DirectMessageService {
     }
 
     public DirectMessage getOneDirectMessage(String dmId) throws Exception{
-        var directMessage = mongoTemplate.findOne(Query.query(Criteria.where("_id").is(dmId)), DirectMessage.class, "direct messages");
 
+        // 1. We get the DM
+        var directMessage = mongoTemplate.findOne(Query.query(Criteria.where("_id").is(dmId)), DirectMessage.class, "direct messages");
         if(directMessage == null){
             throw new Exception("DM doesn't exist");
         }
 
-        // First of all, we set the last chat of the DM.
+        // 2. We set the last chat of the DM:
         var lastChatOption = sideChatService.getLastChat(directMessage.getId());
         directMessage.setLatestMessage(lastChatOption.orElse(null));
 
-        // Then, we check if it's a community directMessage.
-        // If the DM is a community, we have to include the communities basic snapshot data like
-        // name, color, photo etc.
-        var isCommunityDM = directMessage.getRecipients().size() > 2;
+        // 3. We get the full data of members:
+        var query = Query.query(Criteria.where("_id").in(directMessage.getRecipients()));
+        var members = new ArrayList<Member>();
+        var students = mongoTemplate.find(query, Student.class, "students");
+        var admins = mongoTemplate.find(query, Admin.class, "admins");
+        members.addAll(students.stream().map(Member::fromStudent).toList());
+        members.addAll(admins.stream().map(Member::fromAdmin).toList());
+        directMessage.setRecipients(Collections.singletonList(members));
+
+        // (To know if the DM is a community/channel DM or one-to-one
+        var isCommunityDM = mongoTemplate.exists(Query.query(Criteria.where("_id").in(directMessage.getId())), "channels");
+
+
+        // 4. Get the names, color and/or photo of the DM (only channel/community DMs)
         if(!isCommunityDM){
             return directMessage;
         }
@@ -177,7 +174,61 @@ public class DirectMessageService {
             return directMessage;
         }
         var community = mongoTemplate.findById(channelOfThisDM.getCommunityId(), Community.class, "communities");
+        directMessage.setName(channelOfThisDM.getChannelName());
+        directMessage.setColor(channelOfThisDM.getColor());
+        directMessage.setProfile(channelOfThisDM.getChannelProfile());
         directMessage.setCommunity(community);
+
+        return directMessage;
+    }
+
+    public DirectMessage getOneDirectMessage(String dmId, String userId) throws Exception{
+
+        // 1. We get the DM
+        var directMessage = mongoTemplate.findOne(Query.query(Criteria.where("_id").is(dmId)), DirectMessage.class, "direct messages");
+        if(directMessage == null){
+            throw new Exception("DM doesn't exist");
+        }
+
+        // 2. We set the last chat of the DM:
+        var lastChatOption = sideChatService.getLastChat(directMessage.getId());
+        directMessage.setLatestMessage(lastChatOption.orElse(null));
+
+        // 3. We get the full data of members:
+        var query = Query.query(Criteria.where("_id").in(directMessage.getRecipients()));
+        var members = new ArrayList<Member>();
+        var students = mongoTemplate.find(query, Student.class, "students");
+        var admins = mongoTemplate.find(query, Admin.class, "admins");
+        members.addAll(students.stream().map(Member::fromStudent).toList());
+        members.addAll(admins.stream().map(Member::fromAdmin).toList());
+        directMessage.setRecipients(Collections.singletonList(members));
+
+        // (To know if the DM is a community/channel DM or one-to-one
+        var isCommunityDM = mongoTemplate.exists(Query.query(Criteria.where("_id").in(directMessage.getId())), "channels");
+
+
+        // 4. Get the names, latest message, unread message count, color and/or photo of the DM (person, for one-to-one or channel)
+        directMessage.setLatestMessage(sideChatService.getLastChat(dmId).orElse(null));
+        directMessage.setUnreadMessages(sideChatService.getUnseenChatsCount(dmId, userId));
+        if(!isCommunityDM){
+            var person = members.stream().filter(member -> !member.getId().equals(userId)).toList().get(0);
+            directMessage.setName(person.getFirstName() + " " + person.getLastName());
+            directMessage.setProfile(person.getProfile());
+            directMessage.setColor(person.getColor().name());
+            return directMessage;
+        }
+
+
+        // Since DM is not one-to-one:
+        var channelOfThisDM = mongoTemplate.findById(directMessage.getId(), Channel.class, "channels");
+        if(channelOfThisDM == null){
+            return directMessage;
+        }
+        var community = mongoTemplate.findById(channelOfThisDM.getCommunityId(), Community.class, "communities");
+        directMessage.setCommunity(community);
+        directMessage.setName(channelOfThisDM.getChannelName());
+        directMessage.setColor(channelOfThisDM.getColor());
+        directMessage.setProfile(channelOfThisDM.getChannelProfile());
 
         return directMessage;
     }

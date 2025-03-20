@@ -1,5 +1,6 @@
 package org.niit_project.backend.service;
 
+import org.niit_project.backend.dto.ApiException;
 import org.niit_project.backend.dto.ApiResponse;
 import org.niit_project.backend.entities.*;
 import org.niit_project.backend.repository.ChatRepository;
@@ -8,6 +9,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -32,6 +35,42 @@ public class ChatService {
     @Autowired
     private MongoTemplate mongoTemplate;
 
+    public Chat startChat(String userId, String recipientId) throws Exception{
+        // First of all we have to know if the users exist exists.
+        var query = Query.query(Criteria.where("_id").in(userId, recipientId));
+        var studentExists = mongoTemplate.exists(query, "students");
+        var adminExists = mongoTemplate.exists(query, "admins");
+
+        // Check and ensure users exists
+        if(!studentExists || !adminExists){
+            throw new ApiException("User does not exist", HttpStatus.NOT_FOUND);
+        }
+
+        var dm = new DirectMessage();
+        dm.setRecipients(List.of(userId, recipientId));
+        dm.setTime(LocalDateTime.now());
+        var createdDM = directMessageService.createDirectMessage(dm);
+
+        var createdNewDMChat = new Chat();
+        createdNewDMChat.setMessage("The Beginning of your legendary discussions");
+        createdNewDMChat.setMessageType(MessageType.create);
+
+        var createdChat = createChat(createdNewDMChat, createdDM.getId(), userId);
+
+        // Assuming the recipients are Strings, Since they are...
+        var response = new ApiResponse();
+        response.setMessage("Created DM");
+        for(var recipient : dm.getRecipients()){
+            response.setData(directMessageService.getOneDirectMessage(createdDM.getId(), recipient.toString()));
+            messagingTemplate.convertAndSend("/dms/" + recipient, response);
+        }
+
+
+        return createdChat;
+
+
+
+    }
 
     public Chat createChat(Chat chat,final String dmId, String senderId) throws Exception{
         /// By default, we set the id to null and the time to the current time
@@ -74,13 +113,13 @@ public class ChatService {
         // To update the dms websocket that a new chat has been added
         var channelResponse = new ApiResponse();
         channelResponse.setMessage("Chat Sent To DM");
-        var recipients = dm.getRecipients();
+        var recipients = dm.getRecipients().stream().map(o -> (Member) o).toList();
         for(var recipient : recipients){
-            var unreadCount = getUnseenChatsCount(dmId, recipient);
+            var unreadCount = getUnseenChatsCount(dmId, recipient.getId());
             dm.setLatestMessage(savedChat);
             dm.setUnreadMessages(unreadCount);
             channelResponse.setData(dm);
-            messagingTemplate.convertAndSend("/dms/" + recipient, channelResponse);
+            messagingTemplate.convertAndSend("/dms/" + recipient.getId(), channelResponse);
         }
 
         return savedChat;
@@ -134,7 +173,7 @@ public class ChatService {
 
         // We then get the channel and get all it's recipients
         var dm = directMessageService.getOneDirectMessage(dmId);
-        var recipients = dm.getRecipients();
+        var recipients = dm.getRecipients().stream().map(o -> ((Member)o).getId()).toList();
 
         // Secondly, we make sure the member is a part of the channel
         if(!recipients.contains(userId)){
@@ -177,7 +216,7 @@ public class ChatService {
          * If the dm is a personal dm (one-to-one), we would update the dms websocket of all (the two)
          * the recipients. Else, we would just update the websocket of the reader of the message.
          */
-        var receiptRecipients = dm.getCommunity() != null? List.of(userId): dm.getRecipients();
+        var receiptRecipients = dm.getCommunity() != null? List.of(userId): recipients;
         response.setMessage("Chat marked as read successfully");
         dm.setLatestMessage(getLastChat(dmId).orElse(null));
         for(var recipient: receiptRecipients){

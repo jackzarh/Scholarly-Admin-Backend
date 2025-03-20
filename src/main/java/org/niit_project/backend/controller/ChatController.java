@@ -26,7 +26,19 @@ public class ChatController {
     @Autowired
     private ChatService chatService;
 
-
+    @PostMapping(path = "/startChat/{userId}/{recipientId}")
+    public ResponseEntity<ApiResponse> startChat(@PathVariable String userId, @PathVariable String recipientId){
+        var response = new ApiResponse();
+        try{
+            var created = chatService.startChat(userId, recipientId);
+            response.setMessage("Started Chat");
+            response.setData(created);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            response.setMessage(e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+    }
 
     @PostMapping(path = "/sendChat/{dmId}/{senderId}")
     public ResponseEntity<ApiResponse> sendChat(@PathVariable String dmId, @PathVariable String senderId, @RequestBody Chat chat){
