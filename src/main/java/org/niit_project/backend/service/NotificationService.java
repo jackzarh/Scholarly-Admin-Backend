@@ -1,16 +1,21 @@
 package org.niit_project.backend.service;
 
+import io.github.cdimascio.dotenv.Dotenv;
 import org.niit_project.backend.dto.ApiResponse;
+import org.niit_project.backend.entities.Admin;
 import org.niit_project.backend.entities.Notification;
+import org.niit_project.backend.entities.Student;
 import org.niit_project.backend.repository.NotificationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -18,6 +23,9 @@ public class NotificationService {
 
     @Autowired
     private NotificationRepository notificationRepository;
+
+    @Autowired
+    private FirebaseMessagingService firebaseMessagingService;
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
@@ -29,7 +37,7 @@ public class NotificationService {
     public Notification sendNotification(Notification notification) throws Exception{
         notification.setId(null);
         notification.setTimestamp(LocalDateTime.now());
-        if(notification.getUserId() == null){
+        if(notification.getRecipients() == null){
             throw new Exception("Target User Is Null");
         }
 
@@ -40,9 +48,26 @@ public class NotificationService {
         var sentNotification = notificationRepository.save(notification);
 
         var response = new ApiResponse("New notification", sentNotification);
-        messagingTemplate.convertAndSend("/notifications/" + notification.getUserId(), response);
+        messagingTemplate.convertAndSend("/notifications/" + notification.getRecipients(), response);
 
         return sentNotification;
+    }
+
+    public Notification sendPushNotification(Notification notification) throws Exception{
+        var notif = sendNotification(notification);
+        var query = Query.query(Criteria.where("_id").in(notif.getRecipients()));
+
+
+        // To get tokens of all the recipients
+        var tokens = new ArrayList<String>();
+        var students = mongoTemplate.find(query, Student.class, "students");
+        var admins = mongoTemplate.find(query, Admin.class, "admins");
+        tokens.addAll(students.stream().map(Student::getPlayerId).toList());
+        tokens.addAll(admins.stream().map(Admin::getPlayerId).toList());
+
+
+        firebaseMessagingService.sendNotification(notif, tokens);
+        return notif;
     }
 
     public Notification updateNotification(String notificationId, Notification notification) throws Exception{
@@ -67,7 +92,7 @@ public class NotificationService {
         var sentNotification = notificationRepository.save(gottenNotification);
 
         var response = new ApiResponse("Notification updated", sentNotification);
-        messagingTemplate.convertAndSend("/notifications/" + notification.getUserId(), response);
+        messagingTemplate.convertAndSend("/notifications/" + notification.getRecipients(), response);
 
         return sentNotification;
     }
@@ -84,7 +109,7 @@ public class NotificationService {
         var sentNotification = notificationRepository.save(gottenNotification);
 
         var response = new ApiResponse("Marked notification as read", sentNotification);
-        messagingTemplate.convertAndSend("/notifications/" + gottenNotification.getUserId(), response);
+        messagingTemplate.convertAndSend("/notifications/" + gottenNotification.getRecipients(), response);
         return sentNotification;
     }
 
@@ -99,7 +124,7 @@ public class NotificationService {
         notificationRepository.deleteById(notificationId);
 
         // To immediately, re-updated the notifications on the user's list
-        messagingTemplate.convertAndSend("scholarly/getNotifications/" + gottenNotification.get().getUserId());
+        messagingTemplate.convertAndSend("scholarly/getNotifications/" + gottenNotification.get().getRecipients());
 
         return gottenNotification.get();
     }

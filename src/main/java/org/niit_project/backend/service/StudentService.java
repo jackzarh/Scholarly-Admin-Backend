@@ -1,15 +1,10 @@
 package org.niit_project.backend.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.getstream.models.UpdateUsersRequest;
 import io.getstream.services.framework.StreamSDKClient;
-import io.github.cdimascio.dotenv.Dotenv;
 import jakarta.validation.Valid;
-import org.niit_project.backend.dto.ApiResponse;
 import org.niit_project.backend.entities.*;
-import org.niit_project.backend.repository.AdminRepository;
 import org.niit_project.backend.repository.StudentRepository;
-import org.niit_project.backend.utils.JwtTokenUtil;
 import org.niit_project.backend.utils.PhoneNumberConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
@@ -18,18 +13,11 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation;
 
 
 import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.beans.Expression;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.time.LocalDateTime;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -38,6 +26,9 @@ public class StudentService {
 
     @Autowired
     private StudentRepository studentRepository;
+
+    @Autowired
+    private NotificationService notificationService;
 
     @Autowired
     private MongoTemplate mongoTemplate;
@@ -120,6 +111,16 @@ public class StudentService {
         student.setCounselor(freeCounselor.getId());
 
         final Student savedStudent = studentRepository.save(student);
+
+        var notification = new Notification();
+        notification.setCategory(NotificationCategory.account);
+        notification.setTitle("Welcome to Scholarly");
+        notification.setContent("We're really excited to have you here in scholarly 👋");
+        notification.setTimestamp(LocalDateTime.now());
+        notification.setRecipients(List.of(savedStudent.getId()));
+        notification.setTarget(savedStudent.getId());
+        notificationService.sendPushNotification(notification);
+
 
         // Once the user has been saved with this counselor, we update it on the counselors end as well
         freeCounselor.addMentee(savedStudent.getId());
@@ -222,11 +223,24 @@ public class StudentService {
 //        }
     }
 
+    public Optional<Student> updatePlayerId(String id, String playerId){
+        var gottenAdmin = getCompactStudent(id);
+
+        if(gottenAdmin.isEmpty()){
+            return Optional.empty();
+        }
+
+        var queriedStudent = gottenAdmin.get();
+        queriedStudent.setPlayerId(playerId);
+        return Optional.of(studentRepository.save(queriedStudent));
+    }
+
     public void createStreamUser(Student student) throws Exception{
         var streamUser = new StreamUser();
         streamUser.setId(student.getId());
         streamUser.setName(student.getFullName());
         streamUser.setColor(student.getColor());
+        streamUser.setRole("user");
 
 
         var response = client.updateUsers(

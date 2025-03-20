@@ -97,7 +97,7 @@ public class ChannelController {
         }
 
         try{
-            var createdChannel = channelService.createChannel(userId,channel);
+            var createdChannel = channelService.createChannel(userId,channel,"");
 
             response.setMessage("Created Channel Successfully");
             response.setData(createdChannel);

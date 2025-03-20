@@ -9,6 +9,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -168,7 +169,7 @@ public class ChannelService {
         // If the user/admin was added. We want to send a chat indicating
         // That the added was added
         var chat = new Chat();
-        chat.setChannelId(channelId);
+        chat.setDmId(channelId);
         chat.setSenderProfile(member.getProfile());
         chat.setSenderId(userId);
         chat.setTimestamp(LocalDateTime.now());
@@ -182,7 +183,7 @@ public class ChannelService {
         notification.setTitle("Joined Channel");
         notification.setContent("You were added to channel '" + savedChannel.getChannelName() + "'");
         notification.setTarget(savedChannel.getId());
-        notification.setUserId(userId);
+        notification.setRecipients(List.of(userId));
         notificationService.sendNotification(notification);
 
         /// To update the websocket that a new chat has been added
@@ -242,7 +243,7 @@ public class ChannelService {
         notification.setTitle("Left Channel");
         notification.setContent("You were removed from channel '" + savedChannel.getChannelName() + "'");
         notification.setTarget(savedChannel.getId());
-        notification.setUserId(userId);
+        notification.setRecipients(List.of(userId));
         notificationService.sendNotification(notification);
 
         var member = admin.map(Member::fromAdmin).orElseGet(() -> Member.fromStudent(student.get()));
@@ -250,7 +251,7 @@ public class ChannelService {
         // If the user/admin was removed or left. We want to send a chat indicating
         // That the victim was removed or left
         var chat = new Chat();
-        chat.setChannelId(channelId);
+        chat.setDmId(channelId);
         chat.setSenderProfile(member.getProfile());
         chat.setSenderId(userId);
         chat.setTimestamp(LocalDateTime.now());
@@ -306,7 +307,7 @@ public class ChannelService {
         }
 
         var notification = new Notification();
-        notification.setUserId(id);
+        notification.setRecipients(List.of(id));
         notification.setCategory(NotificationCategory.invitation);
         notification.setTarget(channelId);
         notification.setTitle("Channel Invitation");
@@ -318,7 +319,7 @@ public class ChannelService {
         var invitation = notificationService.getNotification(invitationId);
         invitation.setRead(true);
         if(accepted){
-            addMember(invitation.getUserId(), invitation.getTarget());
+            addMember(invitation.getRecipients().get(0), invitation.getTarget());
             invitation.setTitle("Accepted Invitation");
             invitation.setContent("You accepted an invitation");
         }
@@ -344,7 +345,13 @@ public class ChannelService {
     }
 
 
-    public Channel createChannel(String creatorId, Channel channel) throws Exception{
+    public Channel createChannel(String creatorId, Channel channel, String communityId) throws Exception{
+        // To verify first of all that the community exists:
+        var communityExists = mongoTemplate.exists(Query.query(Criteria.where("_id").is(communityId)), Community.class, "communities");
+        if(!communityExists){
+            throw new Exception("The target community for this channel doesn't exist");
+        }
+
         // This way, both students and admins can create channels
         var admin  = adminService.getAdmin(creatorId);
         var student = studentService.getCompactStudent(creatorId);
@@ -355,6 +362,7 @@ public class ChannelService {
         var creator = admin.map(Member::fromAdmin).orElseGet(() -> Member.fromStudent(student.get()));
 
         channel.setId(null);
+        channel.setCommunityId(communityId);
         channel.setCreator(creatorId);
         channel.setMembers(List.of(creatorId));
         channel.setCreatedAt(LocalDateTime.now());
@@ -365,12 +373,12 @@ public class ChannelService {
         // If the channel was created. We want to send a chat indicating
         // That the channel was created
         var chat = new Chat();
-        chat.setChannelId(createdChannel.getId());
+        chat.setDmId(createdChannel.getId());
         chat.setSenderProfile(creator.getProfile());
         chat.setSenderId(creatorId);
         chat.setTimestamp(LocalDateTime.now());
         chat.setMessageType(MessageType.create);
-        chat.setMessage(creator.getFirstName() + " created Channel '" + channel.getChannelName() + "'.");
+        chat.setMessage(creator.getFirstName() + (" created Channel '") + channel.getChannelName() + "'.");
         chat.setReadReceipt(List.of(creatorId));
         var createdChat = chatRepository.save(chat);
 
@@ -379,7 +387,7 @@ public class ChannelService {
         notification.setTitle("Channel Created");
         notification.setContent("You created channel '" + channel.getChannelName() + "'");
         notification.setTarget(createdChannel.getId());
-        notification.setUserId(creatorId);
+        notification.setRecipients(List.of(creatorId));
         notificationService.sendNotification(notification);
 
 
@@ -422,7 +430,7 @@ public class ChannelService {
         var fetchedChannel = getOneChannel(channelId).get();
 
         var chat = new Chat();
-        chat.setChannelId(savedChannel.getId());
+        chat.setDmId(savedChannel.getId());
         chat.setSenderProfile(creator.getProfile());
         chat.setSenderId(creator.getId());
         chat.setTimestamp(LocalDateTime.now());
@@ -445,20 +453,13 @@ public class ChannelService {
             var updatedChannelResponse = new ApiResponse("Channel Updated", fetchedChannel);
             messagingTemplate.convertAndSend("/channels/" + memberId, updatedChannelResponse);
         }
-
-        for(String memberId: membersId){
-            var notification = new Notification();
-            notification.setCategory(NotificationCategory.channel);
-            notification.setTitle("Channel Updated");
-            notification.setContent((Objects.equals(memberId, gottenChannel.getCreator().toString())? "You updated channel '":"Someone updated channel '") + channel.getChannelName() + "'");
-            notification.setTarget(savedChannel.getId());
-            notification.setUserId(memberId);
-            try {
-                notificationService.sendNotification(notification);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+        var notification = new Notification();
+        notification.setCategory(NotificationCategory.channel);
+        notification.setTitle("Channel Updated");
+        notification.setContent("Channel '" + channel.getChannelName() + "' was updated.");
+        notification.setTarget(savedChannel.getId());
+        notification.setRecipients(membersId);
+        notificationService.sendNotification(notification);
 
         return fetchedChannel;
     }
@@ -485,7 +486,7 @@ public class ChannelService {
         // Once channel photo changed,
         // We send a chat indicating that channel photo has changed
         var chat = new Chat();
-        chat.setChannelId(channelId);
+        chat.setDmId(channelId);
         chat.setSenderProfile(creator.getProfile());
         chat.setSenderId(creator.getId());
         chat.setTimestamp(LocalDateTime.now());
@@ -510,18 +511,16 @@ public class ChannelService {
             messagingTemplate.convertAndSend("/channels/" + member, updatedChannelResponse);
         }
 
-        for(String member: members){
-            var notification = new Notification();
-            notification.setCategory(NotificationCategory.channel);
-            notification.setTitle("Channel Profile Updated");
-            notification.setContent((Objects.equals(member, channel.getCreator().toString())? "You updated channel '":"Someone updated channel '") + channel.getChannelName() + "'");
-            notification.setTarget(savedChannel.getId());
-            notification.setUserId(member);
-            try {
-                notificationService.sendNotification(notification);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        var notification = new Notification();
+        notification.setCategory(NotificationCategory.channel);
+        notification.setTitle("Channel Profile Updated");
+        notification.setContent("Channel '" + channel.getChannelName() + "', was updated");
+        notification.setTarget(savedChannel.getId());
+        notification.setRecipients(members);
+        try {
+            notificationService.sendNotification(notification);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         return Optional.of(fetchedChannel);

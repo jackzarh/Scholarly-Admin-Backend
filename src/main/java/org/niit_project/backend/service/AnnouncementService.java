@@ -10,7 +10,6 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.messaging.simp.broker.SimpleBrokerMessageHandler;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -96,6 +95,7 @@ public class AnnouncementService {
         response.setData(getOneAnnouncement(createdAnnouncement.getId()));
         notification.setTitle(announcement.getAnnouncementTitle());
         notification.setContent(announcement.getAnnouncementDescription());
+        notification.setImage(announcement.getAnnouncementPhoto());
         notification.setCategory(NotificationCategory.announcement);
         notification.setTimestamp(announcement.getCreatedTime());
         notification.setTarget(announcement.getId());
@@ -110,10 +110,9 @@ public class AnnouncementService {
 
             audienceList.addAll(allUsers);
         }
+        notification.setRecipients(audienceList);
+        notificationService.sendPushNotification(notification);
         for(final String user : audienceList){
-            notification.setUserId(user);
-            notificationService.sendNotification(notification);
-
             messagingTemplate.convertAndSend("/announcements/"+user,response);
         }
 

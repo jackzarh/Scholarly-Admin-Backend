@@ -10,5 +10,6 @@ public enum NotificationCategory {
     batch,
     course,
     channel,
+    community,
     other
 }

@@ -33,8 +33,13 @@ public class Channel {
 
     private String color;
 
+    private String communityId;
+
     @Transient
     private Integer unreadMessages;
+
+    @Transient
+    private Community community;
 
     public String getColor() {
         return color == null? Colors.getRandomColor().name(): color;
@@ -66,6 +71,14 @@ public class Channel {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getCommunityId() {
+        return communityId;
+    }
+
+    public void setCommunityId(String communityId) {
+        this.communityId = communityId;
     }
 
     public String getChannelDescription() {
@@ -122,5 +135,13 @@ public class Channel {
 
     public void setChannelName(String channelName) {
         this.channelName = channelName;
+    }
+
+    public Community getCommunity() {
+        return community;
+    }
+
+    public void setCommunity(Community community) {
+        this.community = community;
     }
 }

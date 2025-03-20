@@ -2,28 +2,16 @@ package org.niit_project.backend.service;
 
 
 //import im.zego.serverassistant.sample.Token04SampleBase;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.getstream.models.UpdateUsersRequest;
-import io.getstream.models.UserRequest;
 import io.getstream.services.framework.StreamSDKClient;
-import io.github.cdimascio.dotenv.Dotenv;
 import jakarta.validation.Valid;
-import org.niit_project.backend.config.StreamClientConfig;
-import org.niit_project.backend.entities.Admin;
-import org.niit_project.backend.entities.Colors;
-import org.niit_project.backend.entities.Counselor;
-import org.niit_project.backend.entities.StreamUser;
+import org.niit_project.backend.entities.*;
 import org.niit_project.backend.repository.AdminRepository;
-import org.niit_project.backend.utils.JwtTokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.List;
@@ -32,6 +20,9 @@ import java.util.List;
 public class AdminService {
     @Autowired
     private AdminRepository adminRepository;
+
+    @Autowired
+    private NotificationService notificationService;
 
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
@@ -104,9 +95,19 @@ public class AdminService {
             // We also create a Stream Account for the user
             createStreamUser(savedAdmin);
 
+            var notification = new Notification();
+            notification.setCategory(NotificationCategory.account);
+            notification.setTitle("Welcome to Scholarly");
+            notification.setContent("We're really excited to have you here in scholarly, " + savedAdmin.getFirstName());
+            notification.setTimestamp(LocalDateTime.now());
+            notification.setRecipients(List.of(savedAdmin.getId()));
+            notification.setTarget(savedAdmin.getId());
+            notificationService.sendPushNotification(notification);
+
             return Optional.of(savedAdmin);
 
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             e.printStackTrace();
             return Optional.empty();
         }
@@ -122,6 +123,7 @@ public class AdminService {
         streamUser.setId(admin.getId());
         streamUser.setName(admin.getFullName());
         streamUser.setColor(admin.getColor());
+        streamUser.setRole("admin");
 
         var response = client.updateUsers(
                 UpdateUsersRequest.builder()
@@ -137,8 +139,6 @@ public class AdminService {
 
     public Optional<Admin> updateAdmin(String id, Admin admin) {
         /// Only the firstName, lastName are edited.
-
-
         var gottenAdmin = getAdmin(id);
 
         if(gottenAdmin.isEmpty()){
@@ -165,6 +165,19 @@ public class AdminService {
 
 
         return Optional.of(savedAdmin);
+    }
+
+    public Optional<Admin> updatePlayerId(String id, String playerId){
+        /// Only the firstName, lastName are edited.
+        var gottenAdmin = getAdmin(id);
+
+        if(gottenAdmin.isEmpty()){
+            return Optional.empty();
+        }
+
+        var queriedAdmin = gottenAdmin.get();
+        queriedAdmin.setPlayerId(playerId);
+        return Optional.of(adminRepository.save(queriedAdmin));
     }
 
     public Optional<Admin> updateAdminProfile(String id, String url){

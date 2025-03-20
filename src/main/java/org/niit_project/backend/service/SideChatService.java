@@ -38,15 +38,10 @@ public class SideChatService {
 
     }
 
-    public Optional<Chat> getLastChat(String channelId){
-        var getChannel = getCompactChannel(channelId);
-
-        if(getChannel.isEmpty()){
-            return Optional.empty();
-        }
+    public Optional<Chat> getLastChat(String dmId){
 
         /// Aggregate Chats and Get the Latest One.
-        var matchPipeline = Aggregation.match(Criteria.where("channelId").is(channelId));
+        var matchPipeline = Aggregation.match(Criteria.where("dmId").is(dmId));
         var limitPipeline = Aggregation.limit(1);
         var sortPipeline = Aggregation.sort(Sort.by(Sort.Direction.DESC, "_id"));
         var aggregation = Aggregation.newAggregation(matchPipeline, sortPipeline, limitPipeline);
@@ -60,12 +55,12 @@ public class SideChatService {
     }
 
 
-    public Integer getUnseenChatsCount(String channelId, String memberId){
+    public Integer getUnseenChatsCount(String dmId, String memberId){
         /// Aggregate Chats that belong to this channel
         /// And have not been read by this member
         var matchPipeline = Aggregation.match(
                 new Criteria().andOperator(
-                        Criteria.where("channelId").is(channelId),
+                        Criteria.where("dmId").is(dmId),
                         Criteria.where("senderId").ne(memberId),
                         Criteria.where("readReceipt").nin(memberId)
                 )

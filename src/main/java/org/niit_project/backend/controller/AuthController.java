@@ -12,9 +12,11 @@ import org.niit_project.backend.utils.PhoneNumberConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -114,6 +116,21 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/subscribeNotification/{id}")
+    public ResponseEntity<ApiResponse> subscribeNotification(@RequestBody Map<String, Object> map, @PathVariable String userId){
+        var response = new ApiResponse();
+
+        try{
+            var updatedAdmin = adminService.updatePlayerId(userId, map.get("playerId").toString());
+            response.setMessage("Set Player Id");
+            response.setData(updatedAdmin);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            response.setMessage(e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
+        }
+    }
+
     @PostMapping("/login")
     public ResponseEntity<ApiResponse> login(@RequestBody Admin admin) {
         final ApiResponse response = new ApiResponse();
@@ -144,6 +161,21 @@ public class AuthController {
             var loggedInStudent = studentService.login(student);
             response.setMessage("Student Logged In Successfully");
             response.setData(loggedInStudent);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            response.setMessage(e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
+        }
+    }
+
+    @PostMapping("/student/subscribeNotification/{id}")
+    public ResponseEntity<ApiResponse> subscribeNotificationStudent(@RequestBody Map<String, Object> map, @PathVariable String userId){
+        var response = new ApiResponse();
+
+        try{
+            var updatedAdmin = studentService.updatePlayerId(userId, map.get("playerId").toString());
+            response.setMessage("Set Player Id");
+            response.setData(updatedAdmin);
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             response.setMessage(e.getMessage());

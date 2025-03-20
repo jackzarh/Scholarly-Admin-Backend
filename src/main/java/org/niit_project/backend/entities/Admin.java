@@ -1,6 +1,5 @@
 package org.niit_project.backend.entities;
 
-import io.github.cdimascio.dotenv.Dotenv;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
@@ -38,6 +37,8 @@ public class Admin {
     private String phoneNumber;
 
     private String token;
+
+    private String playerId;
 
 
     private boolean online;
@@ -83,6 +84,14 @@ public class Admin {
 
     public void setLastName(@NotNull(message = "last name cannot be empty") String lastName) {
         this.lastName = lastName;
+    }
+
+    public String getPlayerId() {
+        return playerId;
+    }
+
+    public void setPlayerId(String playerId) {
+        this.playerId = playerId;
     }
 
     public String getPhoneNumber() {

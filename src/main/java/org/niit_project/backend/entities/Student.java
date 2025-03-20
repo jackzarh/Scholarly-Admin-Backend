@@ -34,6 +34,8 @@ public class Student {
     @Indexed(unique = true)
     private String phoneNumber;
 
+    private String playerId;
+
     private LocalDateTime createdAt;
 
     private String token;
@@ -70,6 +72,14 @@ public class Student {
 
     public Object getCounselor() {
         return counselor;
+    }
+
+    public String getPlayerId() {
+        return playerId;
+    }
+
+    public void setPlayerId(String playerId) {
+        this.playerId = playerId;
     }
 
     public void setCounselor(Object counselor) {

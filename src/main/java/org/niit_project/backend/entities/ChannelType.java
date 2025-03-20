@@ -1,8 +1,8 @@
 package org.niit_project.backend.entities;
 
 public enum ChannelType {
-    announcement,
+    announcements,
     project,
-    qa,
-    subject
+    discussions,
+    other,
 }

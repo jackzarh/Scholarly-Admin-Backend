@@ -8,34 +8,38 @@ public class Member {
     private Colors color;
     private String email,phoneNumber, profile;
 
+    private String currentDeviceToken;
+
     public Member(){}
 
-    private Member(String id, String firstName, MemberRole role, String lastName, String email, String phoneNumber, String profile) {
+    private Member(String id, String firstName, MemberRole role, String lastName, String email, String phoneNumber, String profile, String currentDeviceToken) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
+        this.currentDeviceToken = currentDeviceToken;
         this.email = email;
         this.role = role;
         this.phoneNumber = phoneNumber;
         this.profile = profile;
     }
 
-    private Member(String id, String firstName, MemberRole role, String lastName, String email, String phoneNumber, String profile, Colors color) {
+    private Member(String id, String firstName, MemberRole role, String lastName, String email, String phoneNumber, String profile, Colors color, String currentDeviceToken) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.role = role;
+        this.currentDeviceToken = currentDeviceToken;
         this.phoneNumber = phoneNumber;
         this.profile = profile;
         this.color = color;
     }
 
     public static Member fromStudent(Student student){
-        return new Member(student.getId(), student.getFirstName(), MemberRole.student, student.getLastName(), student.getEmail(), student.getPhoneNumber(), student.getProfile());
+        return new Member(student.getId(), student.getFirstName(), MemberRole.student, student.getLastName(), student.getEmail(), student.getPhoneNumber(), student.getProfile(), student.getPlayerId());
     }
     public static Member fromAdmin(Admin admin){
-        return new Member(admin.getId(), admin.getFirstName(), MemberRole.admin, admin.getLastName(), admin.getEmail(), admin.getPhoneNumber(), admin.getProfile(), admin.getColor());
+        return new Member(admin.getId(), admin.getFirstName(), MemberRole.admin, admin.getLastName(), admin.getEmail(), admin.getPhoneNumber(), admin.getProfile(), admin.getColor(), admin.getPlayerId());
     }
 
     public Colors getColor() {

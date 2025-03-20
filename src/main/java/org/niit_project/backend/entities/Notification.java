@@ -2,9 +2,11 @@ package org.niit_project.backend.entities;
 
 import lombok.Data;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Document(collection = "notifications")
 @Data
@@ -13,10 +15,11 @@ public class Notification {
     @Id
     private String id;
 
-    private String title, content, target;
+    private String title, content, target, image;
 
-    private String userId;
+    private List<String> recipients, readReceipt;
 
+    @Transient
     private boolean read;
 
     private LocalDateTime timestamp;
@@ -43,6 +46,22 @@ public class Notification {
         this.id = id;
     }
 
+    public List<String> getReadReceipt() {
+        return readReceipt;
+    }
+
+    public void setReadReceipt(List<String> readReceipt) {
+        this.readReceipt = readReceipt;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
+    }
+
     public String getTitle() {
         return title;
     }
@@ -59,12 +78,12 @@ public class Notification {
         this.content = content;
     }
 
-    public String getUserId() {
-        return userId;
+    public List<String> getRecipients() {
+        return recipients == null? List.of(): recipients;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
+    public void setRecipients(List<String> recipients) {
+        this.recipients = recipients;
     }
 
     public String getTarget() {
@@ -97,5 +116,14 @@ public class Notification {
 
     public void setCategory(NotificationCategory category) {
         this.category = category;
+    }
+
+
+    public com.google.firebase.messaging.Notification toFirebaseNotification(){
+        return com.google.firebase.messaging.Notification.builder()
+                .setTitle(title)
+                .setBody(content)
+                .setImage(image)
+                .build();
     }
 }

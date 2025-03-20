@@ -15,7 +15,7 @@ public class Chat {
 
     private String senderId;
     private String senderProfile;
-    private String channelId;
+    private String dmId;
     private String thumbnail;
 
     private String message;
@@ -37,12 +37,12 @@ public class Chat {
         this.id = id;
     }
 
-    public String getChannelId() {
-        return channelId;
+    public String getDmId() {
+        return dmId;
     }
 
-    public void setChannelId(String channelId) {
-        this.channelId = channelId;
+    public void setDmId(String dmId) {
+        this.dmId = dmId;
     }
 
     public MessageType getMessageType() {

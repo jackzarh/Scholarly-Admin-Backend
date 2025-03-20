@@ -24,10 +24,7 @@ public class ChatService {
     private ChatRepository chatRepository;
 
     @Autowired
-    private AdminService adminService;
-
-    @Autowired
-    private StudentService studentService;
+    private DirectMessageService directMessageService;
 
     @Autowired
     private ChannelService channelService;
@@ -36,7 +33,7 @@ public class ChatService {
     private MongoTemplate mongoTemplate;
 
 
-    public Chat createChat(Chat chat,final String channelId, String memberId) throws Exception{
+    public Chat createChat(Chat chat,final String dmId, String senderId) throws Exception{
         /// By default, we set the id to null and the time to the current time
         chat.setId(null);
         chat.setTimestamp(LocalDateTime.now());
@@ -55,56 +52,51 @@ public class ChatService {
             throw new Exception("Teni, Message Cannot be null here");
         }
 
-        // We check if the member and channel exists
-        var getChannel = channelService.getOneChannel(channelId);
-        if(getChannel.isEmpty()){
-            throw new Exception("Channel Doesn't exist");
+        // We check if the DM exists
+        var dm = directMessageService.getOneDirectMessage(dmId);
+        if(!dm.getRecipients().contains(senderId)){
+            throw new Exception("Member is not part of dm");
         }
 
-        var channel = getChannel.get();
-        if(!channel.getMembers().stream().map(o -> ((Member)o).getId()).toList().contains(memberId)){
-            throw new Exception("Member is not part of channel");
-        }
+//        var memberProfile = dm.getMembers().stream().map(o-> (Member)o).filter(member1 -> member1.getId().equals(senderId)).toList().get(0);
 
-        var member = channel.getMembers().stream().map(o-> (Member)o).filter(member1 -> member1.getId().equals(memberId)).toList().get(0);
-
-        chat.setChannelId(channelId);
-        chat.setSenderId(memberId);
-        chat.setSenderProfile(member.getProfile());
-        chat.setReadReceipt(List.of(memberId));
+        chat.setDmId(dmId);
+        chat.setSenderId(senderId);
+//        chat.setSenderProfile(member.getProfile());
+        chat.setReadReceipt(List.of(senderId));
 
         var savedChat = chatRepository.save(chat);
 
         /// To update the websocket that a new chat has been added
         var chatsResponse = new ApiResponse("Sent Chats", savedChat);
-        messagingTemplate.convertAndSend("/chats/" + channelId, chatsResponse);
+        messagingTemplate.convertAndSend("/chats/" + dmId, chatsResponse);
 
-        // To update the channels websocket that a new chat has been added
+        // To update the dms websocket that a new chat has been added
         var channelResponse = new ApiResponse();
-        channelResponse.setMessage("Chat Sent To Channel");
-        var members = channel.getMembers().stream().map(o -> ((Member)o).getId()).toList();
-        for(var membersId : members){
-            var unreadCount = getUnseenChatsCount(channelId, membersId);
-            channel.setLatestMessage(savedChat);
-            channel.setUnreadMessages(unreadCount);
-            channelResponse.setData(channel);
-            messagingTemplate.convertAndSend("/channels/" + membersId, channelResponse);
+        channelResponse.setMessage("Chat Sent To DM");
+        var recipients = dm.getRecipients();
+        for(var recipient : recipients){
+            var unreadCount = getUnseenChatsCount(dmId, recipient);
+            dm.setLatestMessage(savedChat);
+            dm.setUnreadMessages(unreadCount);
+            channelResponse.setData(dm);
+            messagingTemplate.convertAndSend("/dms/" + recipient, channelResponse);
         }
 
         return savedChat;
     }
 
-    public List<Chat> getChats(String channelId) throws Exception{
+    public List<Chat> getChats(String dmId) throws Exception{
 
-        var getChannel = channelService.getCompactChannel(channelId);
+        var getChannel = channelService.getCompactChannel(dmId);
 
         if(getChannel.isEmpty()){
-            throw new Exception("Channel Doesn't exist");
+            throw new Exception("DM Doesn't exist");
         }
 
 
         /// Normal Chat Aggregation Pipelines
-        var matchPipeline = Aggregation.match(Criteria.where("channelId").is(channelId));
+        var matchPipeline = Aggregation.match(Criteria.where("dmId").is(dmId));
         var sortPipeline = Aggregation.sort(Sort.by("timestamp"));
         var aggregation = Aggregation.newAggregation(matchPipeline, sortPipeline);
 
@@ -120,12 +112,12 @@ public class ChatService {
         return chatRepository.findById(chatId);
     }
 
-    public Integer getUnseenChatsCount(String channelId, String memberId){
+    public Integer getUnseenChatsCount(String dmId, String memberId){
         /// Aggregate Chats that belong to this channel
         /// And have not been read by this member
         var matchPipeline = Aggregation.match(
                 new Criteria().andOperator(
-                        Criteria.where("channelId").is(channelId),
+                        Criteria.where("dmId").is(dmId),
                         Criteria.where("senderId").ne(memberId),
                         Criteria.where("readReceipt").nin(memberId)
                 )
@@ -137,22 +129,16 @@ public class ChatService {
        return results.size();
     }
 
-    public Chat markChatAsRead(String userId, String channelId, String chatId) throws Exception{
+    public Chat markChatAsRead(String userId, String dmId, String chatId) throws Exception{
         var chat = getCompactChat(chatId);
-        var channel = channelService.getOneChannel(channelId);
 
-        // First, We make sure the channel exists
-        if(channel.isEmpty()){
-            throw new Exception("Channel Not Found");
-        }
-
-        // We then get the channel and get all it's members
-        var gottenChannel = channel.get();
-        var members = gottenChannel.getMembers().stream().map(o -> ((Member)o).getId()).toList();
+        // We then get the channel and get all it's recipients
+        var dm = directMessageService.getOneDirectMessage(dmId);
+        var recipients = dm.getRecipients();
 
         // Secondly, we make sure the member is a part of the channel
-        if(!members.contains(userId)){
-            throw new Exception("This member is not part of this channel");
+        if(!recipients.contains(userId)){
+            throw new Exception("This user is not part of this DM");
         }
 
         // We also make sure that the chat itself also exists.
@@ -184,28 +170,34 @@ public class ChatService {
         var response = new ApiResponse();
         response.setMessage("Chat has been marked read");
         response.setData(savedChat);
-        messagingTemplate.convertAndSend("/chats/" + channelId, response);
+        messagingTemplate.convertAndSend("/chats/" + dmId, response);
 
-        // Then we update the channel websocket of the member who read the message
+
+        /**
+         * If the dm is a personal dm (one-to-one), we would update the dms websocket of all (the two)
+         * the recipients. Else, we would just update the websocket of the reader of the message.
+         */
+        var receiptRecipients = dm.getCommunity() != null? List.of(userId): dm.getRecipients();
         response.setMessage("Chat marked as read successfully");
-        gottenChannel.setUnreadMessages(getUnseenChatsCount(channelId, userId));
-        gottenChannel.setLatestMessage(getLastChat(channelId).orElse(null));
-        response.setData(gottenChannel);
-        messagingTemplate.convertAndSend("/channels/" + userId, response);
-
+        dm.setLatestMessage(getLastChat(dmId).orElse(null));
+        for(var recipient: receiptRecipients){
+            dm.setUnreadMessages(getUnseenChatsCount(dmId, recipient));
+            response.setData(dm);
+            messagingTemplate.convertAndSend("/dms/" + recipient, response);
+        }
 
         return savedChat;
     }
 
-    public Optional<Chat> getLastChat(String channelId){
-        var getChannel = channelService.getCompactChannel(channelId);
+    public Optional<Chat> getLastChat(String dmId){
+        var getChannel = channelService.getCompactChannel(dmId);
 
         if(getChannel.isEmpty()){
             return Optional.empty();
         }
 
         /// Aggregate Chats and Get the Latest One.
-        var matchPipeline = Aggregation.match(Criteria.where("channelId").is(channelId));
+        var matchPipeline = Aggregation.match(Criteria.where("dmId").is(dmId));
         var limitPipeline = Aggregation.limit(1);
         var sortPipeline = Aggregation.sort(Sort.by(Sort.Direction.DESC, "_id"));
         var aggregation = Aggregation.newAggregation(matchPipeline, sortPipeline, limitPipeline);

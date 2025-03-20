@@ -11,7 +11,6 @@ import org.niit_project.backend.service.ChatService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -27,8 +26,10 @@ public class ChatController {
     @Autowired
     private ChatService chatService;
 
-    @PostMapping(path = "/sendChat/{channelId}/{senderId}")
-    public ResponseEntity<ApiResponse> sendChat(@PathVariable String channelId, @PathVariable String senderId, @RequestBody Chat chat){
+
+
+    @PostMapping(path = "/sendChat/{dmId}/{senderId}")
+    public ResponseEntity<ApiResponse> sendChat(@PathVariable String dmId, @PathVariable String senderId, @RequestBody Chat chat){
         var response = new ApiResponse();
 
 
@@ -37,7 +38,7 @@ public class ChatController {
         chat.setMessageType(MessageType.chat);
 
         try {
-            var sentChat = chatService.createChat(chat, channelId, senderId);
+            var sentChat = chatService.createChat(chat, dmId, senderId);
             response.setMessage("Sent Chat Successfully");
             response.setData(sentChat);
 
@@ -50,12 +51,12 @@ public class ChatController {
         }
     }
 
-    @GetMapping(path = "/getChats/{channelId}")
-    public ResponseEntity<ApiResponse> getChat(@PathVariable String channelId){
+    @GetMapping(path = "/getChats/{dmId}")
+    public ResponseEntity<ApiResponse> getChat(@PathVariable String dmId){
         var response = new ApiResponse();
 
         try {
-            var gottenChats = chatService.getChats(channelId);
+            var gottenChats = chatService.getChats(dmId);
             response.setMessage("Gotten Chats Successfully");
             response.setData(gottenChats);
             return new ResponseEntity<>(response, HttpStatus.OK);
@@ -67,8 +68,8 @@ public class ChatController {
         }
     }
 
-    @PostMapping(value = "/sendAttachment/{channelId}/{senderId}", consumes = "multipart/form-data")
-    public ResponseEntity<ApiResponse> sendAttachmentChat(@PathVariable String channelId, @PathVariable String senderId, @RequestPart("attachment") MultipartFile attachment, @RequestPart(value = "thumbnail", required = false) MultipartFile thumbnail ,@RequestPart(value = "attachmentType", required = false) String type, @RequestPart(value = "message", required = false) String message){
+    @PostMapping(value = "/sendAttachment/{dmId}/{senderId}", consumes = "multipart/form-data")
+    public ResponseEntity<ApiResponse> sendAttachmentChat(@PathVariable String dmId, @PathVariable String senderId, @RequestPart("attachment") MultipartFile attachment, @RequestPart(value = "thumbnail", required = false) MultipartFile thumbnail ,@RequestPart(value = "attachmentType", required = false) String type, @RequestPart(value = "message", required = false) String message){
         var response = new ApiResponse();
 
 
@@ -117,14 +118,14 @@ public class ChatController {
 
 
             chat.setAttachment(secure_url.toString());
-            chat.setChannelId(channelId);
+            chat.setDmId(dmId);
             chat.setSenderId(senderId);
             chat.setMessage(message);
             chat.setMessageType(MessageType.chat);
             chat.setFileName(fileName);
             chat.setAttachmentType(attachmentType);
 
-            var createdChat = chatService.createChat(chat, channelId, senderId);
+            var createdChat = chatService.createChat(chat, dmId, senderId);
             response.setMessage("Uploaded Attachment Successfully");
             response.setData(createdChat);
             return new ResponseEntity<>(response, HttpStatus.OK);
@@ -135,12 +136,12 @@ public class ChatController {
         }
     }
 
-    @PatchMapping(path = "/markChatAsRead/{channelId}/{userId}/{chatId}")
-    public ResponseEntity<ApiResponse> markChatAsRead(@PathVariable String chatId, @PathVariable String channelId, @PathVariable("userId") String memberId){
+    @PatchMapping(path = "/markChatAsRead/{dmId}/{userId}/{chatId}")
+    public ResponseEntity<ApiResponse> markChatAsRead(@PathVariable String chatId, @PathVariable String dmId, @PathVariable("userId") String memberId){
         var response = new ApiResponse();
 
         try{
-            var markedChat = chatService.markChatAsRead(memberId, channelId, chatId);
+            var markedChat = chatService.markChatAsRead(memberId, dmId, chatId);
             response.setMessage("Marked Chat As Read");
             response.setData(markedChat);
             return new ResponseEntity<>(response, HttpStatus.OK);

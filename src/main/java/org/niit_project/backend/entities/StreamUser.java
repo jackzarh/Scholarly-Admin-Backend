@@ -13,6 +13,18 @@ public class StreamUser {
 
     private Custom custom;
 
+    public Custom getCustom() {
+        return custom;
+    }
+
+    public void setCustom(Custom custom) {
+        this.custom = custom;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
     @Transient
     private String role;
 

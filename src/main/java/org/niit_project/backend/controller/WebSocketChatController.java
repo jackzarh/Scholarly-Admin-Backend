@@ -14,13 +14,13 @@ public class WebSocketChatController {
     @Autowired
     private ChatService chatService;
 
-    @MessageMapping("/getChats/{channelId}")
-    @SendTo("/chats/{channelId}")
-    public ApiResponse listChats(@DestinationVariable String channelId){
+    @MessageMapping("/getChats/{dmId}")
+    @SendTo("/chats/{dmId}")
+    public ApiResponse listChats(@DestinationVariable String dmId){
         var response = new ApiResponse();
 
         try {
-            var chats = chatService.getChats(channelId);
+            var chats = chatService.getChats(dmId);
             response.setMessage("Gotten Chats Successfully");
             response.setData(chats);
             return response;

@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "scholarly-2025",
+  "private_key_id": "cc2b71a1ca1c3f97e74dcdb117fa8d28c252944a",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDHpkbyxwLrkAou\nfg4r2FtdAk2sFWwM6UIr5UPZFweE5NCByCQ6zeYEQJjIjfm8rAxuSox1vGTD9JB3\nn2mje/qwufHMqDX+6kAv1FVPCU4VBBa9UOfTR1YG8SW7LGBuQVBaEyaAvKFxw1HI\nEtQrCnk9363WEoCzIlkmPQr79tiRywg4eVm+V4OxbXEtokTv+fFPjKjZza0dk53B\nrV2k9YsDrBWEVdcAPfx+nG+tRK/kfV+eeGMwz5+bICvN0Dbif4Eoyk5OiaUixxLr\n1V/qcy7fOIdWW+DiwuoCtQ2WvMzyVG4F79aHafplGwsrxaXA3bQaTlC+mEaY4YsY\nzAB3A+urAgMBAAECggEABXLLt99nfH87T+Z/w4GNiL3B2eLhxn5tIF6K2fdPbLiD\n2i7YkkRBNTeAE+UP/i6hzja5m5LvGwvnD2Sp0NzWzBDfAOtMQe8pnkSIqXYDC/7H\nEhaNpQ3q0pitI20EGq4sn7CrGdNMAptGdZPR93S7N02N5Gwv1/OlhC4hSRwE8AGS\nlWcq22qjJCZD8xxA+/+kMLNCmPW3uCatTg3szTblNaMP5pZVBpE9uym6MvApjg+a\nDLtofJL0qjBQlWV0HQNKo7icfyfSuEj34XSIGqy5XCYVgde1zFjGkbXPgh3osFYN\nf6kmAgADKNm5vH6n6Dzu/TfjTdaRdgYi8QbrPxIUMQKBgQDvQt+EahG1BsaxpDn6\n/KHVBqtAfFRcuSeVonXtUc+UY8x3qQgNP7XfBJzmayCG9IL++4tR9irAI/l5u1zx\ntmpvDahE2Cdpp4TM23G6LaSPhiKnVik7bZGx2uGxjhEXjdtUQkk25JUp21GnC9GB\n/91Y4Y6uOKTVhmYrGtPc6+cF2wKBgQDVnfcfCFbnY2H08cvmAUgx/hlCi6l0Mfss\nu1iGIhiE+CZkb/1UQFCJDrkh9ifPlpEVqBXCJgpk63Pg/Z5aXHnjg19Ers4s3bXC\n4+LjL2micZHhcVD4nK/6m9rqG4FL3ZqL9PC+iEbM1hhRjp0gZ8dIqept9a/7Qer0\neRY64E3icQKBgDUhO3My/pWdWJfv6PQkD2e3oGWkdjNU5kZjGh7F8Pt5odjcjy4p\n/J/2bUT5evKc703h29EqgdnC40413fDK2h2pAbmv6iibC3FWNY3rPsSkO6O/DU7m\nCNleyolcC82YMaEnSwzGe50c16fphu+AOs3W4JEtgOTtgFiID43aUKXLAoGAdCiK\nuXg6cWZsXNqi6nZmALFQoQv64DFRiPhy4bVmqd+aWOFA2vCCGpVD/ICzE0GnsSQO\neN1gp5IVGBIxaqeArEPCqUF44ZLKBKkQtkMQ6QFitzl8M0RYuSjI+KZuP4fIQzS1\nOJY4EaiV3rtzG6zzA8NJs/N2d2VX0wqJGQjhsTECgYAEPlKxDSAljpd4Ey8rQhXB\n1tn7WWaJ9vOCHTQFIpEy4Np8IQ9BkeRhEpGnSl+XVAmB49WBjvwqIfooNYoqwWNe\nOBS8nPFUXus9O9FRHSqMlg1GW3ktFiHMmNllzLyeGDGqbiDfQ/LogtjWVHYInQVN\nzXUmXrkNHHSJ9EA7DP0qeA==\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-fbsvc@scholarly-2025.iam.gserviceaccount.com",
+  "client_id": "101739084009104761632",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40scholarly-2025.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
