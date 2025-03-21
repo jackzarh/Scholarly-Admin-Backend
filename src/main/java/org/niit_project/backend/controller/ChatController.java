@@ -8,6 +8,7 @@ import org.niit_project.backend.entities.AttachmentType;
 import org.niit_project.backend.entities.Chat;
 import org.niit_project.backend.entities.MessageType;
 import org.niit_project.backend.service.ChatService;
+import org.niit_project.backend.service.DirectMessageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,9 @@ public class ChatController {
     @Autowired
     private ChatService chatService;
 
+    @Autowired
+    private DirectMessageService directMessageService;
+
     @PostMapping(path = "/startChat/{userId}/{recipientId}")
     public ResponseEntity<ApiResponse> startChat(@PathVariable String userId, @PathVariable String recipientId){
         var response = new ApiResponse();
@@ -39,6 +43,24 @@ public class ChatController {
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
     }
+
+    @GetMapping(path = "/getDMs/{userId}")
+    public ResponseEntity<ApiResponse> getDMs(@PathVariable String userId){
+        var response = new ApiResponse();
+
+        try {
+            var gottenDMs = directMessageService.getDirectMessages(userId);
+            response.setMessage("Got DMs Successfully");
+            response.setData(gottenDMs);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+
+        }
+        catch (Exception e){
+            response.setMessage(e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }
+    }
+
 
     @PostMapping(path = "/sendChat/{dmId}/{senderId}")
     public ResponseEntity<ApiResponse> sendChat(@PathVariable String dmId, @PathVariable String senderId, @RequestBody Chat chat){

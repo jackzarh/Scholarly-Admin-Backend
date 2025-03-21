@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -30,17 +30,16 @@ public class DirectMessageService {
     @Autowired
     private MongoTemplate mongoTemplate;
 
-    public List<DirectMessage> getDirectMessages(String userId) throws Exception{
+    public List<DirectMessage> getDirectMessages(String userId) throws Exception {
         var matchAggregation = Aggregation.match(Criteria.where("recipients").in(userId));
         var ordinaryDMsList = mongoTemplate.aggregate(Aggregation.newAggregation(matchAggregation),"direct messages", DirectMessage.class).getMappedResults();
 
-        var dms = ordinaryDMsList.stream().map(directMessage -> {
-            try {
-                return getOneDirectMessage(directMessage.getId(), userId);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }).toList();
+        var dms = new ArrayList<DirectMessage>();
+        for (DirectMessage message : ordinaryDMsList) {
+            System.out.println(message);
+            DirectMessage apply = getOneDirectMessage(message.getId(), userId);
+            dms.add(apply);
+        }
         dms.sort((o1, o2) -> o2.getTime().compareTo(o1.getTime()));
 
         return dms;
@@ -158,7 +157,7 @@ public class DirectMessageService {
         var admins = mongoTemplate.find(query, Admin.class, "admins");
         members.addAll(students.stream().map(Member::fromStudent).toList());
         members.addAll(admins.stream().map(Member::fromAdmin).toList());
-        directMessage.setRecipients(Collections.singletonList(members));
+        directMessage.setRecipients(Arrays.asList(members.toArray()));
 
         // (To know if the DM is a community/channel DM or one-to-one
         var isCommunityDM = mongoTemplate.exists(Query.query(Criteria.where("_id").in(directMessage.getId())), "channels");
@@ -201,7 +200,7 @@ public class DirectMessageService {
         var admins = mongoTemplate.find(query, Admin.class, "admins");
         members.addAll(students.stream().map(Member::fromStudent).toList());
         members.addAll(admins.stream().map(Member::fromAdmin).toList());
-        directMessage.setRecipients(Collections.singletonList(members));
+        directMessage.setRecipients(Arrays.asList(members.toArray()));
 
         // (To know if the DM is a community/channel DM or one-to-one
         var isCommunityDM = mongoTemplate.exists(Query.query(Criteria.where("_id").in(directMessage.getId())), "channels");

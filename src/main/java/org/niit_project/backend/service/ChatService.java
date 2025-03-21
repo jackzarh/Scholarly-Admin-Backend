@@ -42,7 +42,7 @@ public class ChatService {
         var adminExists = mongoTemplate.exists(query, "admins");
 
         // Check and ensure users exists
-        if(!studentExists || !adminExists){
+        if(!studentExists && !adminExists){
             throw new ApiException("User does not exist", HttpStatus.NOT_FOUND);
         }
 
@@ -92,8 +92,8 @@ public class ChatService {
         }
 
         // We check if the DM exists
-        var dm = directMessageService.getOneDirectMessage(dmId);
-        if(!dm.getRecipients().contains(senderId)){
+        var dm = mongoTemplate.findOne(Query.query(Criteria.where("_id").is(dmId)), DirectMessage.class,"direct messages");
+        if(dm.getRecipients().contains(senderId)){
             throw new Exception("Member is not part of dm");
         }
 
@@ -113,13 +113,13 @@ public class ChatService {
         // To update the dms websocket that a new chat has been added
         var channelResponse = new ApiResponse();
         channelResponse.setMessage("Chat Sent To DM");
-        var recipients = dm.getRecipients().stream().map(o -> (Member) o).toList();
+        var recipients = dm.getRecipients().stream().map(Object::toString).toList();
         for(var recipient : recipients){
-            var unreadCount = getUnseenChatsCount(dmId, recipient.getId());
+            var unreadCount = getUnseenChatsCount(dmId, recipient);
             dm.setLatestMessage(savedChat);
             dm.setUnreadMessages(unreadCount);
             channelResponse.setData(dm);
-            messagingTemplate.convertAndSend("/dms/" + recipient.getId(), channelResponse);
+            messagingTemplate.convertAndSend("/dms/" + recipient, channelResponse);
         }
 
         return savedChat;
@@ -172,8 +172,8 @@ public class ChatService {
         var chat = getCompactChat(chatId);
 
         // We then get the channel and get all it's recipients
-        var dm = directMessageService.getOneDirectMessage(dmId);
-        var recipients = dm.getRecipients().stream().map(o -> ((Member)o).getId()).toList();
+        var dm = mongoTemplate.findOne(Query.query(Criteria.where("_id").is(dmId)), DirectMessage.class,"direct messages");
+        var recipients = dm.getRecipients().stream().map(Object::toString).toList();
 
         // Secondly, we make sure the member is a part of the channel
         if(!recipients.contains(userId)){
