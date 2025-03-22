@@ -93,7 +93,7 @@ public class ChatService {
 
         // We check if the DM exists
         var dm = mongoTemplate.findOne(Query.query(Criteria.where("_id").is(dmId)), DirectMessage.class,"direct messages");
-        if(dm.getRecipients().contains(senderId)){
+        if(!dm.getRecipients().contains(senderId)){
             throw new Exception("Member is not part of dm");
         }
 

@@ -231,4 +231,26 @@ public class DirectMessageService {
 
         return directMessage;
     }
+
+    public List<Member> searchUser(String name) throws Exception{
+        var nameParts = name.toLowerCase().split(" ");
+
+        var regexCriteria = Arrays.stream(nameParts)
+                .map(part -> new Criteria().orOperator(
+                        Criteria.where("firstName").regex(part, "i"),
+                        Criteria.where("lastName").regex(part, "i")
+                ))
+                .toArray(Criteria[]::new);
+
+        var matchOperation = Aggregation.match(new Criteria().orOperator(regexCriteria));
+        var aggregation = Aggregation.newAggregation(matchOperation);
+        var students = mongoTemplate.aggregate(aggregation, "students", Student.class).getMappedResults();
+        var admins = mongoTemplate.aggregate(aggregation, "admins", Admin.class).getMappedResults();
+
+        var members = new ArrayList<Member>();
+        members.addAll(students.stream().map(Member::fromStudent).toList());
+        members.addAll(admins.stream().map(Member::fromAdmin).toList());
+        return members;
+
+    }
 }

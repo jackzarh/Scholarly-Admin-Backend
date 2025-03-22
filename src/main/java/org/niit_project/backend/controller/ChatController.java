@@ -2,6 +2,7 @@ package org.niit_project.backend.controller;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import com.google.api.Http;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.niit_project.backend.dto.ApiResponse;
 import org.niit_project.backend.entities.AttachmentType;
@@ -18,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.List;
+import java.util.Map;
 
 
 @RestController
@@ -56,6 +58,22 @@ public class ChatController {
 
         }
         catch (Exception e){
+            response.setMessage(e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }
+    }
+
+    @PostMapping(path = "/searchUser")
+    public ResponseEntity<ApiResponse> searchUser(@RequestBody Map<String, String> body){
+        System.out.println(body);
+        var response = new ApiResponse();
+
+        try{
+            var results = directMessageService.searchUser(body.get("search").trim());
+            response.setMessage("Got Users");
+            response.setData(results);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
             response.setMessage(e.getMessage());
             return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
