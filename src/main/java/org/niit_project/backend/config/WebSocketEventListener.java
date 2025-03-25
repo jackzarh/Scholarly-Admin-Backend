@@ -28,10 +28,11 @@ public class WebSocketEventListener {
         String subscriptionId = headerAccessor.getSubscriptionId();
         // The broker destination being subscribed to
 
+//        System.out.println("Destination ID is: "+destination);
+
         assert destination != null;
         if(destination.startsWith("/admins") || destination.contains("admins")){
             handleAdminSubscription(subscriptionId, false);
-            return;
         }
 
 

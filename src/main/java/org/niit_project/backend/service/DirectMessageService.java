@@ -78,9 +78,11 @@ public class DirectMessageService {
         var createdDM = dmRepository.save(dm);
         //Send new DM created to the DMs websocket;
 
-        var response = new ApiResponse("New Direct Message", createdDM);
+        var response = new ApiResponse();
+        response.setMessage("New Direct Message");
         for(var recipient: createdDM.getRecipients()){
-            messagingTemplate.convertAndSend("/dms/"+recipient, response);
+            response.setData(getOneDirectMessage(createdDM.getId(), recipient.toString()));
+            messagingTemplate.convertAndSend("/dms/"+recipient.toString(), response);
         }
 
         return createdDM;
@@ -129,10 +131,11 @@ public class DirectMessageService {
         var updatedDM = dmRepository.save(dm);
         //Send new DM created to the DMs websocket;
 
-        var response = new ApiResponse("Updated Direct Message", updatedDM);
+        var response = new ApiResponse();
+        response.setMessage("Updated Direct Message");
         for(var recipient: updatedDM.getRecipients()){
-            updatedDM.setUnreadMessages(sideChatService.getUnseenChatsCount(dmId, recipient.toString()));
-            messagingTemplate.convertAndSend("/dms/"+recipient, response);
+            response.setData(getOneDirectMessage(updatedDM.getId(), recipient.toString()));
+            messagingTemplate.convertAndSend("/dms/"+recipient.toString(), response);
         }
 
         return updatedDM;

@@ -10,10 +10,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**") // Match the WebSocket endpoint path
-                .allowedOrigins("*")
+                .allowedOrigins("*", "http://localhost:5054")
                 .allowedOriginPatterns("*")// Allow frontend (adjust according to your setup)
                 .allowedMethods("GET", "POST", "OPTIONS");
     }
-
-    // Configure HTTP message converters (if needed)
 }

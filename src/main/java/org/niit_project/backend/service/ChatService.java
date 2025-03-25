@@ -111,15 +111,13 @@ public class ChatService {
         messagingTemplate.convertAndSend("/chats/" + dmId, chatsResponse);
 
         // To update the dms websocket that a new chat has been added
-        var channelResponse = new ApiResponse();
-        channelResponse.setMessage("Chat Sent To DM");
+        var dmResponse = new ApiResponse();
+        dmResponse.setMessage("Chat Sent To DM");
         var recipients = dm.getRecipients().stream().map(Object::toString).toList();
         for(var recipient : recipients){
-            var unreadCount = getUnseenChatsCount(dmId, recipient);
-            dm.setLatestMessage(savedChat);
-            dm.setUnreadMessages(unreadCount);
-            channelResponse.setData(dm);
-            messagingTemplate.convertAndSend("/dms/" + recipient, channelResponse);
+            var updatedDM = directMessageService.getOneDirectMessage(dmId, recipient);
+            dmResponse.setData(updatedDM);
+            messagingTemplate.convertAndSend("/dms/" + recipient, dmResponse);
         }
 
         return savedChat;
@@ -127,9 +125,9 @@ public class ChatService {
 
     public List<Chat> getChats(String dmId) throws Exception{
 
-        var getChannel = channelService.getCompactChannel(dmId);
+        var dmExists = mongoTemplate.exists(Query.query(Criteria.where("_id").in(dmId)), "direct messages");
 
-        if(getChannel.isEmpty()){
+        if(!dmExists){
             throw new Exception("DM Doesn't exist");
         }
 
@@ -218,10 +216,8 @@ public class ChatService {
          */
         var receiptRecipients = dm.getCommunity() != null? List.of(userId): recipients;
         response.setMessage("Chat marked as read successfully");
-        dm.setLatestMessage(getLastChat(dmId).orElse(null));
         for(var recipient: receiptRecipients){
-            dm.setUnreadMessages(getUnseenChatsCount(dmId, recipient));
-            response.setData(dm);
+            response.setData(directMessageService.getOneDirectMessage(recipient));
             messagingTemplate.convertAndSend("/dms/" + recipient, response);
         }
 
