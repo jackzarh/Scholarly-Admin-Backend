@@ -1,4 +1,4 @@
-package org.niit_project.backend.entities;
+package org.niit_project.backend.enums;
 
 public enum MessageType {
     // If it is a normal chat

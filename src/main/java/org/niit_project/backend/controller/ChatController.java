@@ -2,12 +2,12 @@ package org.niit_project.backend.controller;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
-import com.google.api.Http;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.niit_project.backend.dto.ApiResponse;
-import org.niit_project.backend.entities.AttachmentType;
+import org.niit_project.backend.enums.AttachmentType;
 import org.niit_project.backend.entities.Chat;
-import org.niit_project.backend.entities.MessageType;
+import org.niit_project.backend.enums.MessageType;
+import org.niit_project.backend.models.ApiException;
 import org.niit_project.backend.service.ChatService;
 import org.niit_project.backend.service.DirectMessageService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -202,6 +202,23 @@ public class ChatController {
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
 
+    }
+
+    @DeleteMapping(path = "/closeDm/{dmId}")
+    public ResponseEntity<ApiResponse> closeDM(@PathVariable String dmId){
+        var response = new ApiResponse();
+        try {
+            var dm = directMessageService.clearDm(dmId);
+            response.setMessage("Closed DM");
+            response.setData(dm);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (ApiException e) {
+            response.setMessage(e.getMessage());
+            return new ResponseEntity<>(response, e.getStatusCode());
+        } catch (Exception e) {
+            response.setMessage(e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
     }
 
 //    @PatchMapping(path = "/markAllChatsAsRead/{channelId}/{userId}")

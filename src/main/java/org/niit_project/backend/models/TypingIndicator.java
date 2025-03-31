@@ -1,8 +1,6 @@
-package org.niit_project.backend.entities;
+package org.niit_project.backend.models;
 
 import lombok.Data;
-
-import java.time.LocalDateTime;
 
 @Data
 public class TypingIndicator {

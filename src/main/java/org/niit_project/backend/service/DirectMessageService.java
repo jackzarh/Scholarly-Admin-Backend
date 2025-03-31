@@ -2,12 +2,16 @@ package org.niit_project.backend.service;
 
 import org.niit_project.backend.dto.ApiResponse;
 import org.niit_project.backend.entities.*;
+import org.niit_project.backend.models.ApiException;
+import org.niit_project.backend.models.Delete;
+import org.niit_project.backend.models.User;
 import org.niit_project.backend.repository.DirectMessageRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -36,7 +40,6 @@ public class DirectMessageService {
 
         var dms = new ArrayList<DirectMessage>();
         for (DirectMessage message : ordinaryDMsList) {
-            System.out.println(message);
             DirectMessage apply = getOneDirectMessage(message.getId(), userId);
             dms.add(apply);
         }
@@ -53,17 +56,7 @@ public class DirectMessageService {
      * @throws Exception throws exceptions if these conditions are not met or an unprecedented error occurred.
      */
     public DirectMessage createDirectMessage(DirectMessage dm) throws Exception{
-        // Dms should have names
-//        if(dm.getName() == null){
-//            throw new Exception("Direct Message must have a name");
-//        }
-
-        // DMs should have at least a color
-//        if(dm.getProfile() == null){
-//            if(dm.getColor() == null){
-//                throw new Exception("DM must have at least a color");
-//            }
-//        }
+        dm.setId(dm.getId());
 
         //DMs should have at least 1 recipient
         if(dm.getRecipients() == null || dm.getRecipients().isEmpty()){
@@ -95,12 +88,7 @@ public class DirectMessageService {
      * @throws Exception throws exceptions if these conditions are not met or an unprecedented error occurred.
      */
     public DirectMessage updateDirectMessage(String dmId,DirectMessage dm) throws Exception{
-        var dmExists = dmRepository.findById(dmId);
-        if(dmExists.isEmpty()){
-            throw new Exception("The DM doesn't exist");
-        }
-
-        var oldDM = dmExists.get();
+        var oldDM = dmRepository.findById(dmId).orElseThrow(() -> new Exception("DM doesn't exist"));
 
         if(dm.getName() == null){
             dm.setName(oldDM.getName());
@@ -131,14 +119,55 @@ public class DirectMessageService {
         var updatedDM = dmRepository.save(dm);
         //Send new DM created to the DMs websocket;
 
-        var response = new ApiResponse();
-        response.setMessage("Updated Direct Message");
+
         for(var recipient: updatedDM.getRecipients()){
+            var response = new ApiResponse();
+            response.setMessage("Updated Direct Message");
             response.setData(getOneDirectMessage(updatedDM.getId(), recipient.toString()));
             messagingTemplate.convertAndSend("/dms/"+recipient.toString(), response);
         }
 
         return updatedDM;
+    }
+
+    /**
+     * Service method to add member to DMs.
+     * After it's saved to the DM, the DM is sent to the websocket of all recipients.
+     * @throws Exception throws exceptions if these conditions are not met or an unprecedented error occurred.
+     */
+    public DirectMessage addMember(String userId, String dmId) throws Exception{
+        var dm = dmRepository.findById(dmId).orElseThrow(() -> new Exception("DM doesn't exist"));
+
+        if(dm.getRecipients().contains(userId)){
+            throw new Exception("User is already part of DM");
+        }
+
+        var recipients = new ArrayList<>(dm.getRecipients());
+        recipients.add(userId);
+
+        dm.setRecipients(recipients);
+        return updateDirectMessage(dmId, dm);
+
+    }
+
+    /**
+     * Service method to remove member from DMs.
+     * After it's saved to the DM, the DM is sent to the websocket of all recipients.
+     * @throws Exception throws exceptions if these conditions are not met or an unprecedented error occurred.
+     */
+    public DirectMessage removeMember(String userId, String dmId) throws Exception{
+        var dm = dmRepository.findById(dmId).orElseThrow(() -> new Exception("DM doesn't exist"));
+
+        if(!dm.getRecipients().contains(userId)){
+            throw new Exception("User is not part of DM");
+        }
+
+        var recipients = new ArrayList<>(dm.getRecipients());
+        recipients.remove(userId);
+
+        dm.setRecipients(recipients);
+        return updateDirectMessage(dmId, dm);
+
     }
 
     public DirectMessage getOneDirectMessage(String dmId) throws Exception{
@@ -155,15 +184,15 @@ public class DirectMessageService {
 
         // 3. We get the full data of members:
         var query = Query.query(Criteria.where("_id").in(directMessage.getRecipients()));
-        var members = new ArrayList<Member>();
+        var members = new ArrayList<User>();
         var students = mongoTemplate.find(query, Student.class, "students");
         var admins = mongoTemplate.find(query, Admin.class, "admins");
-        members.addAll(students.stream().map(Member::fromStudent).toList());
-        members.addAll(admins.stream().map(Member::fromAdmin).toList());
+        members.addAll(students.stream().map(User::fromStudent).toList());
+        members.addAll(admins.stream().map(User::fromAdmin).toList());
         directMessage.setRecipients(Arrays.asList(members.toArray()));
 
         // (To know if the DM is a community/channel DM or one-to-one
-        var isCommunityDM = mongoTemplate.exists(Query.query(Criteria.where("_id").in(directMessage.getId())), "channels");
+        var isCommunityDM = mongoTemplate.exists(Query.query(Criteria.where("_id").is(directMessage.getId())), "channels");
 
 
         // 4. Get the names, color and/or photo of the DM (only channel/community DMs)
@@ -192,24 +221,20 @@ public class DirectMessageService {
             throw new Exception("DM doesn't exist");
         }
 
-        // 2. We set the last chat of the DM:
-        var lastChatOption = sideChatService.getLastChat(directMessage.getId());
-        directMessage.setLatestMessage(lastChatOption.orElse(null));
-
-        // 3. We get the full data of members:
+        // 2. We get and set the full data of members:
         var query = Query.query(Criteria.where("_id").in(directMessage.getRecipients()));
-        var members = new ArrayList<Member>();
+        var members = new ArrayList<User>();
         var students = mongoTemplate.find(query, Student.class, "students");
         var admins = mongoTemplate.find(query, Admin.class, "admins");
-        members.addAll(students.stream().map(Member::fromStudent).toList());
-        members.addAll(admins.stream().map(Member::fromAdmin).toList());
+        members.addAll(students.stream().map(User::fromStudent).toList());
+        members.addAll(admins.stream().map(User::fromAdmin).toList());
         directMessage.setRecipients(Arrays.asList(members.toArray()));
 
         // (To know if the DM is a community/channel DM or one-to-one
-        var isCommunityDM = mongoTemplate.exists(Query.query(Criteria.where("_id").in(directMessage.getId())), "channels");
+        var isCommunityDM = mongoTemplate.exists(Query.query(Criteria.where("_id").is(directMessage.getId())), "channels");
 
 
-        // 4. Get the names, latest message, unread message count, color and/or photo of the DM (person, for one-to-one or channel)
+        // 3. Get the names, latest message, unread message count, color and/or photo of the DM (person, for one-to-one or channel)
         directMessage.setLatestMessage(sideChatService.getLastChat(dmId).orElse(null));
         directMessage.setUnreadMessages(sideChatService.getUnseenChatsCount(dmId, userId));
         if(!isCommunityDM){
@@ -235,7 +260,7 @@ public class DirectMessageService {
         return directMessage;
     }
 
-    public List<Member> searchUser(String name) throws Exception{
+    public List<User> searchUser(String name) throws Exception{
         var nameParts = name.toLowerCase().split(" ");
 
         var regexCriteria = Arrays.stream(nameParts)
@@ -250,10 +275,31 @@ public class DirectMessageService {
         var students = mongoTemplate.aggregate(aggregation, "students", Student.class).getMappedResults();
         var admins = mongoTemplate.aggregate(aggregation, "admins", Admin.class).getMappedResults();
 
-        var members = new ArrayList<Member>();
-        members.addAll(students.stream().map(Member::fromStudent).toList());
-        members.addAll(admins.stream().map(Member::fromAdmin).toList());
+        var members = new ArrayList<User>();
+        members.addAll(students.stream().map(User::fromStudent).toList());
+        members.addAll(admins.stream().map(User::fromAdmin).toList());
         return members;
 
+    }
+
+    public DirectMessage clearDm(String dmId) throws ApiException{
+        var dm = dmRepository.findById(dmId).orElseThrow(() -> new ApiException("Dm not found", HttpStatus.NOT_FOUND));
+
+        // We first clear chats sent to the DM.
+        var queryToDelete = Query.query(Criteria.where("dmId").is(dmId));
+        mongoTemplate.findAllAndRemove(queryToDelete, "chats");
+
+        // Then we delete the dm.
+        dmRepository.deleteById(dmId);
+
+        // The data is sent to the websockets indicating that the DM has been deleted
+        var delete = new Delete();
+        delete.setId(dmId);
+        delete.setDeleted(true);
+        for(var recipient : dm.getRecipients()){
+            messagingTemplate.convertAndSend("/dms/"+recipient.toString(), delete);
+        }
+
+        return dm;
     }
 }

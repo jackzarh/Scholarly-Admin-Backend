@@ -1,8 +1,9 @@
 package org.niit_project.backend.service;
 
-import org.niit_project.backend.dto.ApiException;
+import org.niit_project.backend.models.ApiException;
 import org.niit_project.backend.dto.ApiResponse;
 import org.niit_project.backend.entities.*;
+import org.niit_project.backend.enums.MessageType;
 import org.niit_project.backend.repository.ChatRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
@@ -125,7 +126,7 @@ public class ChatService {
 
     public List<Chat> getChats(String dmId) throws Exception{
 
-        var dmExists = mongoTemplate.exists(Query.query(Criteria.where("_id").in(dmId)), "direct messages");
+        var dmExists = mongoTemplate.exists(Query.query(Criteria.where("_id").is(dmId)), "direct messages");
 
         if(!dmExists){
             throw new Exception("DM Doesn't exist");

@@ -1,7 +1,8 @@
-package org.niit_project.backend.entities;
+package org.niit_project.backend.models;
 
 import io.getstream.models.UserRequest;
 import lombok.Data;
+import org.niit_project.backend.enums.Colors;
 import org.springframework.data.annotation.Transient;
 
 import java.util.Map;

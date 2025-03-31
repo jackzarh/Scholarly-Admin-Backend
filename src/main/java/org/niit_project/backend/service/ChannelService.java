@@ -2,6 +2,12 @@ package org.niit_project.backend.service;
 
 import org.niit_project.backend.dto.ApiResponse;
 import org.niit_project.backend.entities.*;
+import org.niit_project.backend.enums.AttachmentType;
+import org.niit_project.backend.enums.Colors;
+import org.niit_project.backend.enums.MessageType;
+import org.niit_project.backend.enums.NotificationCategory;
+import org.niit_project.backend.models.Delete;
+import org.niit_project.backend.models.User;
 import org.niit_project.backend.repository.ChannelRepository;
 import org.niit_project.backend.repository.ChatRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +47,9 @@ public class ChannelService {
     private SimpMessagingTemplate messagingTemplate;
 
     @Autowired
+    private DirectMessageService directMessageService;
+
+    @Autowired
     private MongoTemplate  mongoTemplate;
 
     public Optional<List<Channel>> getAllChannels(){
@@ -64,9 +73,9 @@ public class ChannelService {
             var adminMembers = mongoTemplate.aggregate(membersAggregation, "admins", Admin.class).getMappedResults();
 
             //Then collate all members
-            var allMembers = new ArrayList<Member>();
-            allMembers.addAll(studentMembers.stream().map(Member::fromStudent).toList());
-            allMembers.addAll(adminMembers.stream().map(Member::fromAdmin).toList());
+            var allMembers = new ArrayList<User>();
+            allMembers.addAll(studentMembers.stream().map(User::fromStudent).toList());
+            allMembers.addAll(adminMembers.stream().map(User::fromAdmin).toList());
             channel.setMembers(Arrays.asList(allMembers.toArray()));
             var creator = allMembers.stream().filter(member -> member.getId().equals(channel.getCreator())).findFirst().orElse(allMembers.isEmpty()? null: allMembers.get(0));
             channel.setCreator(creator);
@@ -97,10 +106,10 @@ public class ChannelService {
 
         if(gottenAdminCreator.isEmpty()){
             var student = studentService.getCompactStudent(channel.getCreator().toString()).get();
-            channel.setCreator(Member.fromStudent(student));
+            channel.setCreator(User.fromStudent(student));
         }
         else{
-            channel.setCreator(Member.fromAdmin(gottenAdminCreator.get()));
+            channel.setCreator(User.fromAdmin(gottenAdminCreator.get()));
         }
 
         // Aggregation stage to match the members base on their id
@@ -110,8 +119,8 @@ public class ChannelService {
         var adminMembers = mongoTemplate.aggregate(aggregations, "admins", Admin.class).getMappedResults();
 
         //Then collate all members
-        var allMembers = new ArrayList<>(studentMembers.stream().map(Member::fromStudent).toList());
-        allMembers.addAll(adminMembers.stream().map(Member::fromAdmin).toList());
+        var allMembers = new ArrayList<>(studentMembers.stream().map(User::fromStudent).toList());
+        allMembers.addAll(adminMembers.stream().map(User::fromAdmin).toList());
 
         channel.setMembers(allMembers.stream().map(member -> (Object) member).toList());
 
@@ -131,32 +140,40 @@ public class ChannelService {
 
     }
 
-    public Member addMember(String userId, String channelId) throws Exception{
+    public User addMember(String userId, String channelId) throws Exception{
         // We first have to know whether such person is an
         // Admin or a member
 
         var admin = adminService.getAdmin(userId);
         var student = studentService.getCompactStudent(userId);
-
-        // We're using getCompactChannel because it has the id as a String
-        var channel = getCompactChannel(channelId);
-
         if(admin.isEmpty() && student.isEmpty()){
             throw new Exception("User or Admin doesn't exist");
         }
 
+        // We're using getCompactChannel because it has the id as a String
+        var channel = getCompactChannel(channelId);
         if(channel.isEmpty()){
             throw new Exception("Channel doesn't exist");
         }
-
         var gottenChannel = channel.get();
+
+        // Since the channel exists (Let's get the community)
+        var community = mongoTemplate.findOne(Query.query(Criteria.where("_id").is(gottenChannel.getCommunityId())), Community.class, "communities");
+        if(community == null){
+            throw new Exception("Community does not exist");
+        }
+
+        // We check and make sure the user is a part of the channel's community
+        if(!community.getMembers().contains(userId)){
+            throw new Exception("This admin/student is not part of this channel's community");
+        }
 
         // We make sure the admin/student isn't already a member of the channel
         if(gottenChannel.getMembers().contains(userId)){
             throw new Exception("This user/admin is already a member of this channel");
         }
 
-        var member = admin.map(Member::fromAdmin).orElseGet(() -> Member.fromStudent(student.get()));
+        var member = admin.map(User::fromAdmin).orElseGet(() -> User.fromStudent(student.get()));
 
         /// We then update the members/add the member
         /// And save it in the repository
@@ -174,82 +191,87 @@ public class ChannelService {
         chat.setSenderId(userId);
         chat.setTimestamp(LocalDateTime.now());
         chat.setMessageType(MessageType.member);
-        chat.setMessage(member.getFirstName() + " joined channel");
+        chat.setMessage(member.getFirstName() + " joined channel from community");
         chat.setReadReceipt(List.of());
         var createdChat = chatRepository.save(chat);
-
-        var notification = new Notification();
-        notification.setCategory(NotificationCategory.channel);
-        notification.setTitle("Joined Channel");
-        notification.setContent("You were added to channel '" + savedChannel.getChannelName() + "'");
-        notification.setTarget(savedChannel.getId());
-        notification.setRecipients(List.of(userId));
-        notificationService.sendNotification(notification);
-
-        /// To update the websocket that a new chat has been added
+        // ...And send this chat to the channel's chat websocket
         var chatsResponse = new ApiResponse("User was added", createdChat);
         messagingTemplate.convertAndSend("/chats/" + channelId, chatsResponse);
 
-        // We're going to broadcast the information to all the members
-        var membersId = savedChannel.getMembers().stream().map(Object::toString).toList();
-        var fetchedChannel = getOneChannel(channelId).get();
-        for(String memberId : membersId){
-            fetchedChannel.setUnreadMessages(chatService.getUnseenChatsCount(channelId, memberId));
-            fetchedChannel.setLatestMessage(createdChat);
-            var updatedChannelResponse = new ApiResponse("Member Added", fetchedChannel);
-
-
-            messagingTemplate.convertAndSend("/channels/" + memberId, updatedChannelResponse);
+        // Adding the user to the channel's respective DM (If the DM exists).
+        try{
+            directMessageService.addMember(member.getId(), channelId);
         }
+        catch (Exception e) {
+            // `DM doesn't exist` is the message usually thrown
+            // when the channel hasn't created a DM yet.
+            if(!e.getMessage().equals("DM doesn't exist")){
+                throw e;
+            }
+        }
+
+        // Then, We update each channel's DM by adding this member
+        // We're going to broadcast the information to all the members
+        // var membersId = savedChannel.getMembers().stream().map(Object::toString).toList();
+        // var fetchedChannel = getOneChannel(channelId).get();
+        // for(String memberId : membersId) {
+        //  fetchedChannel.setUnreadMessages(chatService.getUnseenChatsCount(channelId, memberId));
+        //  fetchedChannel.setLatestMessage(createdChat);
+        //  var updatedChannelResponse = new ApiResponse("Member Added", fetchedChannel);
+        //
+        //
+        //  messagingTemplate.convertAndSend("/channels/" + memberId, updatedChannelResponse);
+        // }
+
+
+        // Lastly, we send push notifications to all the members indicating that this member was added
+        var notification = new Notification();
+        notification.setCategory(NotificationCategory.channel);
+        notification.setTitle("New Member");
+        notification.setContent(member.getFirstName() +" joined channel '" + savedChannel.getChannelName() + "'");
+        notification.setTarget(savedChannel.getId());
+        notification.setRecipients(savedChannel.getMembers().stream().map(Object::toString).toList());
+        notificationService.sendPushNotification(notification, false);
 
         return member;
     }
 
     public boolean removeMember(String userId, String channelId) throws Exception{
+
         // We first have to know whether such person is an
         // Admin or a member
 
         var admin = adminService.getAdmin(userId);
         var student = studentService.getCompactStudent(userId);
-
-        // We're using getCompactChannel because it has the id as a String
-        var channel = getCompactChannel(channelId);
-
         if(admin.isEmpty() && student.isEmpty()){
             throw new Exception("User or Admin doesn't exist");
         }
 
+        // We're using getCompactChannel because it has the id as a String
+        var channel = getCompactChannel(channelId);
         if(channel.isEmpty()){
             throw new Exception("Channel doesn't exist");
         }
-
         var gottenChannel = channel.get();
 
-        // We make sure the admin/student is a member of the channel
+
+        // We make sure the admin/student is  a member of the channel
         if(!gottenChannel.getMembers().contains(userId)){
             throw new Exception("This user/admin is not a member of this channel");
         }
 
-        // We remove the member
-        var members = new ArrayList<Object>(gottenChannel.getMembers().stream().map(Object::toString).toList());
-        members.remove(userId);
+        var member = admin.map(User::fromAdmin).orElseGet(() -> User.fromStudent(student.get()));
 
-        // We save to the database
-        gottenChannel.setMembers(members);
+        /// We then update the members/add the member
+        /// And save it in the repository
+        var members = gottenChannel.getMembers().stream().map(Object::toString).toList();
+        var newMembers = new ArrayList<Object>(members);
+        newMembers.remove(member.getId());
+        gottenChannel.setMembers(newMembers);
         var savedChannel = channelRepository.save(gottenChannel);
 
-        var notification = new Notification();
-        notification.setCategory(NotificationCategory.channel);
-        notification.setTitle("Left Channel");
-        notification.setContent("You were removed from channel '" + savedChannel.getChannelName() + "'");
-        notification.setTarget(savedChannel.getId());
-        notification.setRecipients(List.of(userId));
-        notificationService.sendNotification(notification);
-
-        var member = admin.map(Member::fromAdmin).orElseGet(() -> Member.fromStudent(student.get()));
-
-        // If the user/admin was removed or left. We want to send a chat indicating
-        // That the victim was removed or left
+        // If the user/admin was added. We want to send a chat indicating
+        // That the added was added
         var chat = new Chat();
         chat.setDmId(channelId);
         chat.setSenderProfile(member.getProfile());
@@ -259,28 +281,31 @@ public class ChannelService {
         chat.setMessage(member.getFirstName() + " left channel");
         chat.setReadReceipt(List.of());
         var createdChat = chatRepository.save(chat);
-
-        /// To update the websocket that a new chat has been added
-        var chatsResponse = new ApiResponse("User was removed", createdChat);
+        // ...And send this chat to the channel's chat websocket
+        var chatsResponse = new ApiResponse("User left", createdChat);
         messagingTemplate.convertAndSend("/chats/" + channelId, chatsResponse);
 
-        // We're going to broadcast the information to all the members
-        var membersId = savedChannel.getMembers().stream().map(Object::toString).filter(memberId -> !memberId.equals(userId)).toList();
-        var fetchedChannel = getOneChannel(channelId).get();
+        // We send a message to the channel and dms websocket of the user who was removed
+        // Indicating that he's been removed
+        var delete = new Delete();
+        delete.setId(channelId); // Bearing in mind that DMs and Channels have the same id
+        delete.setDeleted(true);
+        messagingTemplate.convertAndSend("/channels/"+userId, delete);
+        messagingTemplate.convertAndSend("/dms/"+userId, delete);
 
 
-        for(String memberId : membersId){
-            fetchedChannel.setUnreadMessages(chatService.getUnseenChatsCount(channelId, memberId));
-            fetchedChannel.setLatestMessage(createdChat);
-            var updatedChannelResponse = new ApiResponse("Member Removed", fetchedChannel);
 
-            messagingTemplate.convertAndSend("/channels/" + channelId, updatedChannelResponse);
+        // Adding the user to the channel's respective DM (If the DM exists).
+        try{
+            directMessageService.removeMember(member.getId(), channelId);
         }
-
-        // To send to the one that left, his/her updated list of channels that he/she is subscribed to
-        var channelResponse = new ApiResponse("You Left A Channel", getUserChannels(userId));
-        messagingTemplate.convertAndSend("/channels/" + channelId, channelResponse);
-
+        catch (Exception e) {
+            // `DM doesn't exist` is the message usually thrown
+            // when the channel hasn't created a DM yet.
+            if(!e.getMessage().equals("DM doesn't exist")){
+                throw e;
+            }
+        }
 
         return true;
 
@@ -333,7 +358,7 @@ public class ChannelService {
     }
 
     // WARNING: Must not be called in getOneChannel !!
-    public Optional<Member> getCreator(String channelId){
+    public Optional<User> getCreator(String channelId){
         var channel = getOneChannel(channelId);
         if(channel.isEmpty()){
             return Optional.empty();
@@ -341,7 +366,7 @@ public class ChannelService {
 
         var gottenChannel = channel.get();
 
-        return Optional.of((Member) gottenChannel.getCreator());
+        return Optional.of((User) gottenChannel.getCreator());
     }
 
 
@@ -359,7 +384,7 @@ public class ChannelService {
             throw new Exception("Admin or Student not found");
         }
 
-        var creator = admin.map(Member::fromAdmin).orElseGet(() -> Member.fromStudent(student.get()));
+        var creator = admin.map(User::fromAdmin).orElseGet(() -> User.fromStudent(student.get()));
 
         channel.setId(null);
         channel.setCommunityId(communityId);

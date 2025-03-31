@@ -62,8 +62,25 @@ public class NotificationService {
         var tokens = new ArrayList<String>();
         var students = mongoTemplate.find(query, Student.class, "students");
         var admins = mongoTemplate.find(query, Admin.class, "admins");
-        tokens.addAll(students.stream().map(Student::getPlayerId).toList());
-        tokens.addAll(admins.stream().map(Admin::getPlayerId).toList());
+        tokens.addAll(students.stream().filter(user -> user.getPlayerId() != null).map(Student::getPlayerId).toList());
+        tokens.addAll(admins.stream().filter(user -> user.getPlayerId() != null).map(Admin::getPlayerId).toList());
+
+
+        firebaseMessagingService.sendNotification(notif, tokens);
+        return notif;
+    }
+
+    public Notification sendPushNotification(Notification notification, boolean save) throws Exception{
+        var notif = save? sendNotification(notification) : notification;
+        var query = Query.query(Criteria.where("_id").in(notif.getRecipients()));
+
+
+        // To get tokens of all the recipients
+        var tokens = new ArrayList<String>();
+        var students = mongoTemplate.find(query, Student.class, "students");
+        var admins = mongoTemplate.find(query, Admin.class, "admins");
+        tokens.addAll(students.stream().filter(user -> user.getPlayerId() != null).map(Student::getPlayerId).toList());
+        tokens.addAll(admins.stream().filter(user -> user.getPlayerId() != null).map(Admin::getPlayerId).toList());
 
 
         firebaseMessagingService.sendNotification(notif, tokens);

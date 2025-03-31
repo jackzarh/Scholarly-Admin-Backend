@@ -2,6 +2,9 @@ package org.niit_project.backend.service;
 
 import org.niit_project.backend.dto.ApiResponse;
 import org.niit_project.backend.entities.*;
+import org.niit_project.backend.enums.Colors;
+import org.niit_project.backend.enums.NotificationCategory;
+import org.niit_project.backend.models.User;
 import org.niit_project.backend.repository.AnnouncementRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
@@ -49,9 +52,9 @@ public class AnnouncementService {
             var adminMembers = mongoTemplate.aggregate(membersAggregation, "admins", Admin.class).getMappedResults();
 
             //Then collate all members
-            var allMembers = new ArrayList<Member>();
-            allMembers.addAll(studentMembers.stream().map(Member::fromStudent).toList());
-            allMembers.addAll(adminMembers.stream().map(Member::fromAdmin).toList());
+            var allMembers = new ArrayList<User>();
+            allMembers.addAll(studentMembers.stream().map(User::fromStudent).toList());
+            allMembers.addAll(adminMembers.stream().map(User::fromAdmin).toList());
             announcement.setAudience(Arrays.asList(allMembers.toArray()));
         });
 
@@ -131,9 +134,9 @@ public class AnnouncementService {
         var adminMembers = mongoTemplate.aggregate(membersAggregation, "admins", Admin.class).getMappedResults();
 
         //Then collate all members
-        var allMembers = new ArrayList<Member>();
-        allMembers.addAll(studentMembers.stream().map(Member::fromStudent).toList());
-        allMembers.addAll(adminMembers.stream().map(Member::fromAdmin).toList());
+        var allMembers = new ArrayList<User>();
+        allMembers.addAll(studentMembers.stream().map(User::fromStudent).toList());
+        allMembers.addAll(adminMembers.stream().map(User::fromAdmin).toList());
         announcement.setAudience(Arrays.asList(allMembers.toArray()));
 
         return announcement;

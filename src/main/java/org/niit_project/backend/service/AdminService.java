@@ -6,6 +6,9 @@ import io.getstream.models.UpdateUsersRequest;
 import io.getstream.services.framework.StreamSDKClient;
 import jakarta.validation.Valid;
 import org.niit_project.backend.entities.*;
+import org.niit_project.backend.enums.Colors;
+import org.niit_project.backend.enums.NotificationCategory;
+import org.niit_project.backend.models.StreamUser;
 import org.niit_project.backend.repository.AdminRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -53,6 +56,11 @@ public class AdminService {
         var loggedInAdmin = gottenAdmin.get();
         var token = generateToken(loggedInAdmin.getId());
         loggedInAdmin.setToken(token);
+        if(admin.getPlayerId() != null){
+            loggedInAdmin.setPlayerId(admin.getPlayerId());
+            var savedAdmin = adminRepository.save(loggedInAdmin);
+            return savedAdmin;
+        }
 
         // We generate the token return it
         return loggedInAdmin;

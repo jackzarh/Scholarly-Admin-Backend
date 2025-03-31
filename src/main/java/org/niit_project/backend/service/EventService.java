@@ -4,7 +4,6 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.niit_project.backend.entities.Event;
-import org.niit_project.backend.entities.Member;
 import org.niit_project.backend.repository.EventRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

@@ -1,7 +1,6 @@
 package org.niit_project.backend.controller;
 
 import org.niit_project.backend.entities.Event;
-import org.niit_project.backend.entities.Member;
 import org.niit_project.backend.service.EventService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

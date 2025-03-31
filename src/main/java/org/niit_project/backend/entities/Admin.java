@@ -2,6 +2,8 @@ package org.niit_project.backend.entities;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import org.niit_project.backend.enums.AdminRole;
+import org.niit_project.backend.enums.Colors;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;

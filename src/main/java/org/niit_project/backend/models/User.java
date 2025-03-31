@@ -1,6 +1,10 @@
-package org.niit_project.backend.entities;
+package org.niit_project.backend.models;
 
-public class Member {
+import org.niit_project.backend.entities.Admin;
+import org.niit_project.backend.enums.Colors;
+import org.niit_project.backend.entities.Student;
+
+public class User {
     public enum MemberRole {admin, student}
     private String id;
     private String firstName, lastName;
@@ -10,9 +14,9 @@ public class Member {
 
     private String currentDeviceToken;
 
-    public Member(){}
+    public User(){}
 
-    private Member(String id, String firstName, MemberRole role, String lastName, String email, String phoneNumber, String profile, String currentDeviceToken) {
+    private User(String id, String firstName, MemberRole role, String lastName, String email, String phoneNumber, String profile, String currentDeviceToken) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -23,7 +27,7 @@ public class Member {
         this.profile = profile;
     }
 
-    private Member(String id, String firstName, MemberRole role, String lastName, String email, String phoneNumber, String profile, Colors color, String currentDeviceToken) {
+    private User(String id, String firstName, MemberRole role, String lastName, String email, String phoneNumber, String profile, Colors color, String currentDeviceToken) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -35,11 +39,11 @@ public class Member {
         this.color = color;
     }
 
-    public static Member fromStudent(Student student){
-        return new Member(student.getId(), student.getFirstName(), MemberRole.student, student.getLastName(), student.getEmail(), student.getPhoneNumber(), student.getProfile(), student.getPlayerId());
+    public static User fromStudent(Student student){
+        return new User(student.getId(), student.getFirstName(), MemberRole.student, student.getLastName(), student.getEmail(), student.getPhoneNumber(), student.getProfile(), student.getPlayerId());
     }
-    public static Member fromAdmin(Admin admin){
-        return new Member(admin.getId(), admin.getFirstName(), MemberRole.admin, admin.getLastName(), admin.getEmail(), admin.getPhoneNumber(), admin.getProfile(), admin.getColor(), admin.getPlayerId());
+    public static User fromAdmin(Admin admin){
+        return new User(admin.getId(), admin.getFirstName(), MemberRole.admin, admin.getLastName(), admin.getEmail(), admin.getPhoneNumber(), admin.getProfile(), admin.getColor(), admin.getPlayerId());
     }
 
     public Colors getColor() {

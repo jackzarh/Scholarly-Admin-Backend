@@ -1,6 +1,8 @@
 package org.niit_project.backend.entities;
 
 import lombok.Data;
+import org.niit_project.backend.enums.ChannelType;
+import org.niit_project.backend.enums.Colors;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;

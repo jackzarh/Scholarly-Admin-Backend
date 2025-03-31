@@ -1,12 +1,13 @@
 package org.niit_project.backend.entities;
 
 import lombok.Data;
+import org.niit_project.backend.models.User;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -54,22 +55,29 @@ public class DirectMessage {
 
         // This way we're checking to always return a List of the recipient's ids whether,
         // the channel has it as a List of String or Members.
-        dm.setRecipients(Collections.singletonList(channel.getMembers().stream().map(member -> member instanceof Member ? ((Member) member).getId() : member.toString()).toList()));
+        var members = channel.getMembers().stream().map(member -> {
+            if (member instanceof User m) {
+                return m.getId(); // Properly extract ID
+            } else {
+                return member.toString(); // Fallback for other types
+            }
+        }).toList();
+        dm.setRecipients(new ArrayList<>(members));
         return dm;
     }
 
     /**
      * If you're creating a DM from a User (Whether student or Admin).
      *
-     * @param member the student/admin you're creating a DM from
+     * @param user the student/admin you're creating a DM from
      * @param yourId the id of the student/admin that is initiating the DM
      */
-    public static DirectMessage fromMember(Member member, String yourId){
+    public static DirectMessage fromMember(User user, String yourId){
         var dm = new DirectMessage();
-        dm.setName(member.getFirstName() + " " + member.getLastName());
-        dm.setProfile(member.getProfile());
-        dm.setColor(member.getColor().name());
-        dm.setRecipients(List.of(yourId, member.getId()));
+        dm.setName(user.getFirstName() + " " + user.getLastName());
+        dm.setProfile(user.getProfile());
+        dm.setColor(user.getColor().name());
+        dm.setRecipients(List.of(yourId, user.getId()));
 
         return dm;
 

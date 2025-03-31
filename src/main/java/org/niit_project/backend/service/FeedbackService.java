@@ -6,7 +6,7 @@ import io.github.cdimascio.dotenv.Dotenv;
 import org.niit_project.backend.dto.ApiResponse;
 import org.niit_project.backend.dto.FeedbackDTO;
 import org.niit_project.backend.entities.Feedback;
-import org.niit_project.backend.entities.FeedbackType;
+import org.niit_project.backend.enums.FeedbackType;
 import org.niit_project.backend.entities.Student;
 import org.niit_project.backend.repository.FeedbackRepository;
 import org.springframework.beans.factory.annotation.Autowired;

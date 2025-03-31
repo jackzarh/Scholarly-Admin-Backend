@@ -1,4 +1,4 @@
-package org.niit_project.backend.dto;
+package org.niit_project.backend.models;
 
 import org.springframework.http.HttpStatus;
 

@@ -1,6 +1,8 @@
 package org.niit_project.backend.entities;
 
 import lombok.Data;
+import org.niit_project.backend.enums.FeedbackType;
+import org.niit_project.backend.models.User;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -29,7 +31,7 @@ public class Feedback {
 
     private LocalDateTime createdAt;
 
-    public Feedback(String id, FeedbackType type, String description, String evidenceUrl, Member perpetrator, Boolean isAnonymous, LocalDateTime createdAt) {
+    public Feedback(String id, FeedbackType type, String description, String evidenceUrl, User perpetrator, Boolean isAnonymous, LocalDateTime createdAt) {
         this.id = id;
         this.type = type;
         this.description = description;

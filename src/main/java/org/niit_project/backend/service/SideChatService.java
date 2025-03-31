@@ -1,11 +1,8 @@
 package org.niit_project.backend.service;
 
-import org.niit_project.backend.dto.ApiResponse;
 import org.niit_project.backend.entities.Channel;
 import org.niit_project.backend.entities.Chat;
-import org.niit_project.backend.entities.MessageType;
 import org.niit_project.backend.repository.ChannelRepository;
-import org.niit_project.backend.repository.ChatRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -13,8 +10,6 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 @Service

@@ -7,6 +7,9 @@ import java.util.List;
 @Service
 public class FirebaseMessagingService {
 
+    /// NOTE: SOme of the Notification Objects may not hae ID's _id.
+    // That is, they may not have been saved as notification on the DB.
+
     public String sendNotification(org.niit_project.backend.entities.Notification notif, String token) throws Exception {
         var notification = notif.toFirebaseNotification();
         Message message = Message.builder()

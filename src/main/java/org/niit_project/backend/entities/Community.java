@@ -1,6 +1,7 @@
 package org.niit_project.backend.entities;
 
 import lombok.Data;
+import org.niit_project.backend.enums.Colors;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -79,7 +80,7 @@ public class Community {
     }
 
     public List<Object> getChannels() {
-        return channels;
+        return channels == null? List.of() : channels;
     }
 
     public void setChannels(List<Object> channels) {
@@ -111,8 +112,12 @@ public class Community {
      */
     @Transient
     public Channel getLatestChannel(){
-        var channels = getChannels().stream().map(o -> (Channel)o).sorted((o1, o2) -> (o2.getLatestMessage() == null? o2.getCreatedAt() : o2.getLatestMessage().getTimestamp()).compareTo(o1.getLatestMessage() == null? o1.getCreatedAt(): o1.getLatestMessage().getTimestamp())).toList();
+        var channelsList = getChannels() == null? List.of(): getChannels();
+        var channels = channelsList.stream().map(o -> (Channel)o).sorted((o1, o2) -> (o2.getLatestMessage() == null? o2.getCreatedAt() : o2.getLatestMessage().getTimestamp()).compareTo(o1.getLatestMessage() == null? o1.getCreatedAt(): o1.getLatestMessage().getTimestamp())).toList();
 
+        if(channels.isEmpty()){
+            return null;
+        }
         return channels.get(0);
     }
 
@@ -124,9 +129,12 @@ public class Community {
      */
     @Transient
     public LocalDateTime getLatestSortTime(){
-        var channels = getChannels().stream().map(o -> (Channel)o).sorted((o1, o2) -> (o2.getLatestMessage() == null? o2.getCreatedAt() : o2.getLatestMessage().getTimestamp()).compareTo(o1.getLatestMessage() == null? o1.getCreatedAt(): o1.getLatestMessage().getTimestamp())).toList();
+        var latestChannel = getLatestChannel();
 
-        return channels.get(0).getLatestMessage() == null? channels.get(0).getCreatedAt() : channels.get(0).getLatestMessage().getTimestamp();
+        if(latestChannel == null){
+            return null;
+        }
+        return latestChannel.getLatestMessage() == null? latestChannel.getCreatedAt() : latestChannel.getLatestMessage().getTimestamp();
     }
 
 

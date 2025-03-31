@@ -1,4 +1,4 @@
-package org.niit_project.backend.entities;
+package org.niit_project.backend.enums;
 
 import java.util.Random;
 
@@ -7,7 +7,6 @@ public enum Colors {
     blue,
     green,
     purple,
-    magenta,
     orange,
     darkviolet,
     indigo,
@@ -27,10 +26,15 @@ public enum Colors {
     mediumvioletred,
     chocolate,
     crimson,
-    brown;
+    brown,
+
+    // Not more used or planning to be removed:
+    magenta;
+
+    // Total enums being removed: 1
 
     public static Colors getRandomColor(){
-        var totalColors = values().length;
+        var totalColors = values().length -1;
 
         var randomIndex = new Random().nextInt(totalColors);
 
