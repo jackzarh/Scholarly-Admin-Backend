@@ -1,7 +1,12 @@
 package org.niit_project.backend.service;
 
+import org.niit_project.backend.entities.Admin;
+import org.niit_project.backend.entities.AdminRole;
 import org.niit_project.backend.entities.Batch;
+import org.niit_project.backend.entities.Student;
+import org.niit_project.backend.repository.AdminRepository;
 import org.niit_project.backend.repository.BatchRepository;
+import org.niit_project.backend.repository.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -19,13 +24,22 @@ import java.util.stream.Collectors;
 public class BatchService {
 
     @Autowired
-    private BatchRepository batchRepository;
+    private final BatchRepository batchRepository;
 
     @Autowired
     private AdminService adminService;
 
     @Autowired
+    private AdminRepository adminRepository;
+
+    @Autowired
+    private final StudentRepository studentRepository;
+
+
+    @Autowired
     private MongoTemplate mongoTemplate;
+
+    private final List<AdminRole> allowedRoles = List.of(AdminRole.counselor, AdminRole.manager);
 
     public Batch createBatch(Batch batch) throws Exception {
         batch.setId(null);
@@ -132,5 +146,69 @@ public class BatchService {
 
     public long countBatches() {
         return batchRepository.count();
+    }
+
+
+    public Batch addMemberToBatch(String adminId, String batchId, String memberId) throws Exception {
+        Optional<Admin> adminOpt = adminRepository.findById(adminId);
+        if (adminOpt.isEmpty() || !allowedRoles.contains(adminOpt.get().getRole())) {
+            throw new Exception("Only Counselors or Managers can add members to a batch.");
+        }
+
+        Optional<Batch> batchOpt = batchRepository.findById(batchId);
+        if (batchOpt.isEmpty()) {
+            throw new Exception("Batch not found.");
+        }
+
+        boolean isStudent = studentRepository.existsById(memberId);
+        boolean isAdmin = adminRepository.existsById(memberId);
+
+        if (!isStudent && !isAdmin) {
+            throw new Exception("Member not found.");
+        }
+
+        Batch batch = batchOpt.get();
+        batch.addMember(memberId);
+        return batchRepository.save(batch);
+    }
+
+    public Batch removeMemberFromBatch(String adminId, String batchId, String memberId) throws Exception {
+        Optional<Admin> adminOpt = adminRepository.findById(adminId);
+        if (adminOpt.isEmpty() || !allowedRoles.contains(adminOpt.get().getRole())) {
+            throw new Exception("Only Counselors or Managers can remove members from a batch.");
+        }
+
+        Optional<Batch> batchOpt = batchRepository.findById(batchId);
+        if (batchOpt.isEmpty()) {
+            throw new Exception("Batch not found.");
+        }
+
+        Batch batch = batchOpt.get();
+        batch.removeMember(memberId);
+        return batchRepository.save(batch);
+    }
+
+    public BatchService(BatchRepository batchRepository, StudentRepository studentRepository) {
+        this.batchRepository = batchRepository;
+        this.studentRepository = studentRepository;
+    }
+
+    public List<Batch> getBatchesByFaculty(AdminRole.Faculty faculty) {
+        return batchRepository.findByFaculty(faculty);
+    }
+
+    public List<Batch> getBatchesForStudent(String studentId) throws Exception {
+        // Check if student exists
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new Exception("Student not found"));
+
+        // Fetch batches where the student is a member
+        List<Batch> studentBatches = batchRepository.findByMembersContaining(studentId);
+
+        if (studentBatches.isEmpty()) {
+            throw new Exception("Student is not part of any batch");
+        }
+
+        return studentBatches;
     }
 }

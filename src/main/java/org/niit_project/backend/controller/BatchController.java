@@ -1,5 +1,6 @@
 package org.niit_project.backend.controller;
 
+import org.niit_project.backend.entities.AdminRole;
 import org.niit_project.backend.entities.Batch;
 import org.niit_project.backend.service.BatchService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +16,11 @@ import java.util.Optional;
 public class BatchController {
 
     @Autowired
-    private BatchService batchService;
+    private final BatchService batchService;
+
+    public BatchController(BatchService batchService) {
+        this.batchService = batchService;
+    }
 
     @PostMapping
     public ResponseEntity<Batch> createBatch(@RequestBody Batch batch) {
@@ -26,6 +31,15 @@ public class BatchController {
             return ResponseEntity.badRequest().body(null);
         }
     }
+
+
+    // To add new member to batch:
+    @PostMapping("/{adm/{meminId}/{batchId}/add-memberberId}")
+    public Batch addMember(@PathVariable String adminId, @PathVariable String batchId, @PathVariable String memberId) throws Exception {
+        return batchService.addMemberToBatch(adminId, batchId, memberId);
+    }
+
+
 
     @GetMapping
     public ResponseEntity<List<Batch>> getAllBatches() {
@@ -85,9 +99,30 @@ public class BatchController {
         }
     }
 
+
+    // To remove member from batch:
+    @DeleteMapping("/{adminId}/{batchId}/remove-member/{memberId}")
+    public Batch removeMember(@PathVariable String adminId, @PathVariable String batchId, @PathVariable String memberId) throws Exception {
+        return batchService.removeMemberFromBatch(adminId, batchId, memberId);
+    }
+
+
     @GetMapping("/count")
     public ResponseEntity<Long> countBatches() {
         long count = batchService.countBatches();
         return ResponseEntity.ok(count);
     }
+
+
+    @GetMapping("/faculty/{faculty}")
+    public List<Batch> getBatchesByFaculty(@PathVariable AdminRole.Faculty faculty) {
+        return batchService.getBatchesByFaculty(faculty);
+    }
+
+    // Get all batches for a student
+    @GetMapping("/student/{studentId}")
+    public List<Batch> getBatchesForStudent(@PathVariable String studentId) throws Exception {
+        return batchService.getBatchesForStudent(studentId);
+    }
 }
+

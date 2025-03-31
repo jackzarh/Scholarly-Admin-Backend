@@ -6,6 +6,7 @@ import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -27,6 +28,10 @@ public class Batch {
 
     private List<Object> candidates;
 
+    private List<String> members = new ArrayList<>();
+
+    private AdminRole.Faculty faculty;
+
     public Batch(){}
 
     public Batch(String id, LocalDate endPeriod, Object admin, LocalDate startPeriod, Object course, String batchName) {
@@ -39,6 +44,16 @@ public class Batch {
     }
 
     public Batch(String id, String batchName, Object course, LocalDate startPeriod, LocalDate endPeriod) {
+    }
+
+    public void addMember(String memberId) {
+        if (!members.contains(memberId)) {
+            members.add(memberId);
+        }
+    }
+
+    public void removeMember(String memberId) {
+        members.remove(memberId);
     }
 
     public List<Object> getCandidates() {
