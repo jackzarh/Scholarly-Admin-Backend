@@ -1,8 +1,8 @@
 package org.niit_project.backend.entities;
 
 import lombok.Data;
+import org.niit_project.backend.enums.Days;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
@@ -21,32 +21,60 @@ public class Batch {
 
     private LocalDate startPeriod;
 
-    private Object admin;
+    private Object faculty;
 
     private LocalDate endPeriod;
 
-    private List<Object> candidates;
+    private List<Object> members;
+
+    private List<Object> paidMembers;
+
+    private List<Days> timetable;
 
     public Batch(){}
 
-    public Batch(String id, LocalDate endPeriod, Object admin, LocalDate startPeriod, Object course, String batchName) {
+    public Batch(String id, LocalDate endPeriod, Object faculty, LocalDate startPeriod, Object course, String batchName) {
         this.id = id;
         this.endPeriod = endPeriod;
-        this.admin = admin;
+        this.faculty = faculty;
         this.startPeriod = startPeriod;
         this.course = course;
         this.batchName = batchName;
     }
 
-    public Batch(String id, String batchName, Object course, LocalDate startPeriod, LocalDate endPeriod) {
+
+    public void addMember(String memberId) {
+        if (!members.contains(memberId)) {
+            members.add(memberId);
+        }
     }
 
-    public List<Object> getCandidates() {
-        return candidates;
+    public void removeMember(String memberId) {
+        members.remove(memberId);
     }
 
-    public void setCandidates(List<Object> candidates) {
-        this.candidates = candidates;
+    public List<Object> getMembers() {
+        return members;
+    }
+
+    public List<Days> getTimetable() {
+        return timetable;
+    }
+
+    public List<Object> getPaidMembers() {
+        return paidMembers;
+    }
+
+    public void setPaidMembers(List<Object> paidMembers) {
+        this.paidMembers = paidMembers;
+    }
+
+    public void setTimetable(List<Days> timetable) {
+        this.timetable = timetable;
+    }
+
+    public void setMembers(List<Object> members) {
+        this.members = members;
     }
 
     public LocalDate getEndPeriod() {
@@ -57,12 +85,12 @@ public class Batch {
         this.endPeriod = endPeriod;
     }
 
-    public Object getAdmin() {
-        return admin;
+    public Object getFaculty() {
+        return faculty;
     }
 
-    public void setAdmin(Object admin) {
-        this.admin = admin;
+    public void setFaculty(Object faculty) {
+        this.faculty = faculty;
     }
 
     public LocalDate getStartPeriod() {

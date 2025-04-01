@@ -1,7 +1,11 @@
 package org.niit_project.backend.service;
 
+import org.niit_project.backend.entities.Batch;
+import org.niit_project.backend.entities.PaymentRequest;
 import org.niit_project.backend.entities.Student;
 import org.niit_project.backend.enums.AdminRole;
+import org.niit_project.backend.enums.MenteeStatus;
+import org.niit_project.backend.enums.PaymentStatus;
 import org.niit_project.backend.models.ApiException;
 import org.niit_project.backend.models.Mentee;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,7 +56,33 @@ public class MenteeService {
             mentee.setCreatedTime(student.getCreatedAt());
             mentee.setProfile(student.getProfile());
 
-            // Line containing functionalities to set the status
+            // Functionalities to set the status
+            // NEW: if the student's hasn't been assigned to any batch
+            // PENDING: if the student has a payment confirmation request that hasn't been confirmed
+            // CONFIRMED: if the student's latest payment confirmation request has been confirmed
+
+            // For NEW:
+            var memberMatch = Aggregation.match(Criteria.where("members").in(student.getId()));
+            var memberAggregation = Aggregation.newAggregation(memberMatch);
+            var studentsBatches = mongoTemplate.aggregate(memberAggregation, "batches", Batch.class).getMappedResults();
+            if(studentsBatches.isEmpty()){
+                mentee.setStatus(MenteeStatus.created);
+                return mentee;
+            }
+
+            // Payment Requests:
+            var requestMatch = Aggregation.match(Criteria.where("issuer").is(student.getId()));
+            var requestAggregation = Aggregation.newAggregation(requestMatch);
+            var requests = mongoTemplate.aggregate(requestAggregation, "payment requests", PaymentRequest.class).getMappedResults();
+
+            // For PENDING:
+            if(requests.stream().anyMatch(paymentRequest -> paymentRequest.getStatus() == PaymentStatus.pending)){
+                mentee.setStatus(MenteeStatus.pending);
+                return  mentee;
+            }
+
+            // For CONFIRMED:
+            mentee.setStatus(MenteeStatus.confirmed);
 
             return mentee;
         }).toList();
