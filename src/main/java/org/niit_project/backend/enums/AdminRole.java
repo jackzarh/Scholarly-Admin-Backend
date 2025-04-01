@@ -4,5 +4,6 @@ public enum AdminRole{
     counselor,
     manager;
     public enum Faculty {
+        faculty;
     }
 }

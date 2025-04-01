@@ -1,9 +1,8 @@
 package org.niit_project.backend.controller;
 
-import org.niit_project.backend.entities.AdminRole;
+import org.niit_project.backend.enums.AdminRole;
 import org.niit_project.backend.entities.Batch;
 import org.niit_project.backend.service.BatchService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,7 +14,7 @@ import java.util.Optional;
 @RequestMapping("scholarly/api/v1/batches")
 public class BatchController {
 
-    @Autowired
+
     private final BatchService batchService;
 
     public BatchController(BatchService batchService) {
@@ -34,10 +33,16 @@ public class BatchController {
 
 
     // To add new member to batch:
-    @PostMapping("/{adm/{meminId}/{batchId}/add-memberberId}")
-    public Batch addMember(@PathVariable String adminId, @PathVariable String batchId, @PathVariable String memberId) throws Exception {
-        return batchService.addMemberToBatch(adminId, batchId, memberId);
+    @PostMapping("/{adminId}/{batchId}/{memberId}/add-member")
+    public ResponseEntity<?> addMember(@PathVariable String adminId, @PathVariable String batchId, @PathVariable String memberId) {
+        try {
+            Batch updatedBatch = batchService.addMemberToBatch(adminId, batchId, memberId);
+            return ResponseEntity.ok(updatedBatch);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
+
 
 
 
@@ -102,9 +107,15 @@ public class BatchController {
 
     // To remove member from batch:
     @DeleteMapping("/{adminId}/{batchId}/remove-member/{memberId}")
-    public Batch removeMember(@PathVariable String adminId, @PathVariable String batchId, @PathVariable String memberId) throws Exception {
-        return batchService.removeMemberFromBatch(adminId, batchId, memberId);
+    public ResponseEntity<?> removeMember(@PathVariable String adminId, @PathVariable String batchId, @PathVariable String memberId) {
+        try {
+            Batch updatedBatch = batchService.removeMemberFromBatch(adminId, batchId, memberId);
+            return ResponseEntity.ok(updatedBatch);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
+
 
 
     @GetMapping("/count")
@@ -115,14 +126,25 @@ public class BatchController {
 
 
     @GetMapping("/faculty/{faculty}")
-    public List<Batch> getBatchesByFaculty(@PathVariable AdminRole.Faculty faculty) {
-        return batchService.getBatchesByFaculty(faculty);
+    public ResponseEntity<?> getBatchesByFaculty(@PathVariable String faculty) {
+        try {
+            AdminRole.Faculty facultyEnum = AdminRole.Faculty.valueOf(faculty.toUpperCase());
+            return ResponseEntity.ok(batchService.getBatchesByFaculty(facultyEnum));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Invalid faculty provided: " + faculty);
+        }
     }
+
 
     // Get all batches for a student
     @GetMapping("/student/{studentId}")
-    public List<Batch> getBatchesForStudent(@PathVariable String studentId) throws Exception {
-        return batchService.getBatchesForStudent(studentId);
+    public ResponseEntity<?> getBatchesForStudent(@PathVariable String studentId) {
+        try {
+            List<Batch> batches = batchService.getBatchesForStudent(studentId);
+            return ResponseEntity.ok(batches);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }
 

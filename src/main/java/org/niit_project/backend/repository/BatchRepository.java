@@ -1,6 +1,6 @@
 package org.niit_project.backend.repository;
 
-import org.niit_project.backend.entities.AdminRole;
+import org.niit_project.backend.enums.AdminRole;
 import org.niit_project.backend.entities.Batch;
 import org.springframework.data.mongodb.repository.MongoRepository;
 

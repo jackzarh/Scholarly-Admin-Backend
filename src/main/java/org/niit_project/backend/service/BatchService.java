@@ -1,13 +1,12 @@
 package org.niit_project.backend.service;
 
 import org.niit_project.backend.entities.Admin;
-import org.niit_project.backend.entities.AdminRole;
+import org.niit_project.backend.enums.AdminRole;
 import org.niit_project.backend.entities.Batch;
 import org.niit_project.backend.entities.Student;
 import org.niit_project.backend.repository.AdminRepository;
 import org.niit_project.backend.repository.BatchRepository;
 import org.niit_project.backend.repository.StudentRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
@@ -23,23 +22,21 @@ import java.util.stream.Collectors;
 @Service
 public class BatchService {
 
-    @Autowired
     private final BatchRepository batchRepository;
-
-    @Autowired
-    private AdminService adminService;
-
-    @Autowired
-    private AdminRepository adminRepository;
-
-    @Autowired
     private final StudentRepository studentRepository;
-
-
-    @Autowired
-    private MongoTemplate mongoTemplate;
-
+    private final AdminRepository adminRepository;
+    private final AdminService adminService;
+    private final MongoTemplate mongoTemplate;
     private final List<AdminRole> allowedRoles = List.of(AdminRole.counselor, AdminRole.manager);
+
+    public BatchService(BatchRepository batchRepository, StudentRepository studentRepository,
+                        AdminRepository adminRepository, AdminService adminService, MongoTemplate mongoTemplate) {
+        this.batchRepository = batchRepository;
+        this.studentRepository = studentRepository;
+        this.adminRepository = adminRepository;
+        this.adminService = adminService;
+        this.mongoTemplate = mongoTemplate;
+    }
 
     public Batch createBatch(Batch batch) throws Exception {
         batch.setId(null);
@@ -149,66 +146,58 @@ public class BatchService {
     }
 
 
-    public Batch addMemberToBatch(String adminId, String batchId, String memberId) throws Exception {
-        Optional<Admin> adminOpt = adminRepository.findById(adminId);
-        if (adminOpt.isEmpty() || !allowedRoles.contains(adminOpt.get().getRole())) {
-            throw new Exception("Only Counselors or Managers can add members to a batch.");
+    public Batch addMemberToBatch(String adminId, String batchId, String memberId) {
+        Admin admin = adminRepository.findById(adminId)
+                .orElseThrow(() -> new IllegalArgumentException("Admin not found."));
+
+        if (!allowedRoles.contains(admin.getRole())) {
+            throw new IllegalArgumentException("Only Counselors or Managers can add members.");
         }
 
-        Optional<Batch> batchOpt = batchRepository.findById(batchId);
-        if (batchOpt.isEmpty()) {
-            throw new Exception("Batch not found.");
+        Batch batch = batchRepository.findById(batchId)
+                .orElseThrow(() -> new IllegalArgumentException("Batch not found."));
+
+        if (!studentRepository.existsById(memberId) && !adminRepository.existsById(memberId)) {
+            throw new IllegalArgumentException("Member not found.");
         }
 
-        boolean isStudent = studentRepository.existsById(memberId);
-        boolean isAdmin = adminRepository.existsById(memberId);
-
-        if (!isStudent && !isAdmin) {
-            throw new Exception("Member not found.");
-        }
-
-        Batch batch = batchOpt.get();
         batch.addMember(memberId);
         return batchRepository.save(batch);
     }
 
-    public Batch removeMemberFromBatch(String adminId, String batchId, String memberId) throws Exception {
-        Optional<Admin> adminOpt = adminRepository.findById(adminId);
-        if (adminOpt.isEmpty() || !allowedRoles.contains(adminOpt.get().getRole())) {
-            throw new Exception("Only Counselors or Managers can remove members from a batch.");
+
+    public Batch removeMemberFromBatch(String adminId, String batchId, String memberId) {
+        Admin admin = adminRepository.findById(adminId)
+                .orElseThrow(() -> new IllegalArgumentException("Admin not found."));
+
+        if (!allowedRoles.contains(admin.getRole())) {
+            throw new IllegalArgumentException("Only Counselors or Managers can remove members.");
         }
 
-        Optional<Batch> batchOpt = batchRepository.findById(batchId);
-        if (batchOpt.isEmpty()) {
-            throw new Exception("Batch not found.");
+        Batch batch = batchRepository.findById(batchId)
+                .orElseThrow(() -> new IllegalArgumentException("Batch not found."));
+
+        if (!batch.getMembers().contains(memberId)) {
+            throw new IllegalArgumentException("Member is not part of this batch.");
         }
 
-        Batch batch = batchOpt.get();
         batch.removeMember(memberId);
         return batchRepository.save(batch);
     }
 
-    public BatchService(BatchRepository batchRepository, StudentRepository studentRepository) {
-        this.batchRepository = batchRepository;
-        this.studentRepository = studentRepository;
-    }
 
     public List<Batch> getBatchesByFaculty(AdminRole.Faculty faculty) {
         return batchRepository.findByFaculty(faculty);
     }
 
-    public List<Batch> getBatchesForStudent(String studentId) throws Exception {
-        // Check if student exists
-        Student student = studentRepository.findById(studentId)
-                .orElseThrow(() -> new Exception("Student not found"));
-
-        // Fetch batches where the student is a member
-        List<Batch> studentBatches = batchRepository.findByMembersContaining(studentId);
-
-        if (studentBatches.isEmpty()) {
-            throw new Exception("Student is not part of any batch");
+    public List<Batch> getBatchesForStudent(String studentId) {
+        // Ensure student exists before proceeding
+        if (!studentRepository.existsById(studentId)) {
+            throw new IllegalArgumentException("Student not found.");
         }
 
-        return studentBatches;
+        // Fetch batches where the student is a member
+        return batchRepository.findByMembersContaining(studentId);
     }
+
 }
