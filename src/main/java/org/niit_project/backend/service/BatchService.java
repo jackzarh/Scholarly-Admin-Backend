@@ -59,6 +59,9 @@ public class BatchService {
         if (batch.getCourse() == null) {
             throw new Exception("Course cannot be null");
         }
+        if(batch.getTimetable() == null || batch.getTimetable().isEmpty()){
+            throw new Exception("Timetable cannot be null");
+        }
         if (batch.getStartPeriod() == null) {
             throw new Exception("Start Period cannot be null");
         }
