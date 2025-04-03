@@ -1,143 +1,116 @@
 package org.niit_project.backend.controller;
 
+import org.niit_project.backend.dto.ApiResponse;
 import org.niit_project.backend.entities.Course;
+import org.niit_project.backend.models.ApiException;
 import org.niit_project.backend.service.CourseService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("scholarly/api/v1/courses")
+@RequestMapping("scholarly/api/v1/course")
 public class CourseController {
 
-    private final CourseService courseService;
+    @Autowired
+    private CourseService courseService;
 
-    public CourseController(CourseService courseService) {
-        this.courseService = courseService;
-    }
-
-    /**
-     * Create a new course.
-     */
-    @PostMapping
+    @PostMapping("/createCourse")
     public ResponseEntity<?> createCourse(@RequestBody Course course) {
+        var response = new ApiResponse();
         try {
-            Course savedCourse = courseService.createCourse(course);
-            return ResponseEntity.ok(savedCourse);
+            var savedCourse = courseService.createCourse(course);
+            response.setMessage("Course Created");
+            response.setData(savedCourse);
+            return ResponseEntity.ok(response);
+        }catch (ApiException e) {
+            response.setMessage(e.getMessage());
+            return new ResponseEntity<>(response, e.getStatusCode());
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            response.setMessage(e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
-    /**
-     * Get a course by ID.
-     */
-    @GetMapping("/{courseId}")
-    public ResponseEntity<?> getCourseById(@PathVariable String courseId) {
-        Optional<Course> course = courseService.getCourseById(courseId);
-        return course.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    /**
-     * Get a course by name.
-     */
-    @GetMapping("/name/{courseName}")
-    public ResponseEntity<?> getCourseByName(@PathVariable String courseName) {
-        Optional<Course> course = courseService.getCourseByName(courseName);
-        return course.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    /**
-     * Get courses taught by an instructor.
-     */
-    @GetMapping("/instructor/{instructorId}")
-    public ResponseEntity<List<Course>> getCoursesByInstructor(@PathVariable String instructorId) {
-        List<Course> courses = courseService.getCoursesByInstructor(instructorId);
-        return ResponseEntity.ok(courses);
-    }
-
-
-    /**
-     * Get all batches for an instructor.
-     */
-    @GetMapping("/instructor/{instructorId}/batches")
-    public ResponseEntity<List<Course>> getBatchesForInstructor(@PathVariable String instructorId) {
-        List<Course> batches = courseService.getBatchesForInstructor(instructorId);
-        return ResponseEntity.ok(batches);
-    }
-
-    /**
-     * Get courses a student is enrolled in.
-     */
-    @GetMapping("/student/{studentId}")
-    public ResponseEntity<List<Course>> getCoursesByStudent(@PathVariable String studentId) {
-        List<Course> courses = courseService.getCoursesByStudent(studentId);
-        return ResponseEntity.ok(courses);
-    }
-
-    @GetMapping("/student/{studentId}/all")
-    public ResponseEntity<?> getCoursesForStudent(@PathVariable String studentId) {
+    @PatchMapping("/updateCourse/{courseId}")
+    public ResponseEntity<?> updateCourse(@PathVariable String courseId, @RequestBody Course course) {
+        var response = new ApiResponse();
         try {
-            List<Course> courses = courseService.getCoursesByStudent(studentId);
-            return ResponseEntity.ok(courses);
+            var savedCourse = courseService.updateCourse(courseId, course);
+            response.setMessage("Course Updated");
+            response.setData(savedCourse);
+            return ResponseEntity.ok(response);
+        }catch (ApiException e) {
+            response.setMessage(e.getMessage());
+            return new ResponseEntity<>(response, e.getStatusCode());
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            response.setMessage(e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
-    /**
-     * Update a course.
-     */
-    @PutMapping("/{courseId}")
-    public ResponseEntity<?> updateCourse(@PathVariable String courseId, @RequestBody Course updatedCourse) {
+    @PatchMapping(value = "/updateCoursePhoto/{courseId}", consumes = "multipart/form-data")
+    public ResponseEntity<?> updateCoursePhoto(@PathVariable String courseId, @RequestPart("photo")MultipartFile file) {
+        var response = new ApiResponse();
         try {
-            Course course = courseService.updateCourse(courseId, updatedCourse);
-            return ResponseEntity.ok(course);
+            var savedCourse = courseService.updateCoursePhoto(courseId, file);
+            response.setMessage("Course Photo Updated");
+            response.setData(savedCourse);
+            return ResponseEntity.ok(response);
+        }catch (ApiException e) {
+            response.setMessage(e.getMessage());
+            return new ResponseEntity<>(response, e.getStatusCode());
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            response.setMessage(e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
-    /**
-     * Delete a course.
-     */
-    @DeleteMapping("/{courseId}")
+
+    @GetMapping("/getOneCourse/{courseId}")
+    public ResponseEntity<?> getOneCourse(@PathVariable String courseId) {
+        var response = new ApiResponse();
+        try {
+            var gottenCourse = courseService.getOneCourse(courseId);
+            response.setMessage("Got Course");
+            response.setData(gottenCourse);
+            return ResponseEntity.ok(response);
+        }catch (ApiException e) {
+            response.setMessage(e.getMessage());
+            return new ResponseEntity<>(response, e.getStatusCode());
+        } catch (Exception e) {
+            response.setMessage(e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @GetMapping("/getAllCourses")
+    public ResponseEntity<?> getAllCourses(){
+        var response = new ApiResponse();
+        response.setMessage("Got Courses");
+        response.setData(courseService.getAllCourses());
+        return ResponseEntity.ok(response);
+    }
+
+
+    @DeleteMapping("/deleteCourse/{courseId}")
     public ResponseEntity<?> deleteCourse(@PathVariable String courseId) {
+        var response = new ApiResponse();
         try {
-            courseService.deleteCourse(courseId);
-            return ResponseEntity.ok("Course deleted successfully.");
+            var savedCourse = courseService.deleteCourse(courseId);
+            response.setMessage("Course Deleted");
+            response.setData(savedCourse);
+            return ResponseEntity.ok(response);
+        }catch (ApiException e) {
+            response.setMessage(e.getMessage());
+            return new ResponseEntity<>(response, e.getStatusCode());
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    /**
-     * Enroll a student in a course.
-     */
-    @PostMapping("/{courseId}/enroll/{studentId}")
-    public ResponseEntity<?> enrollStudent(@PathVariable String courseId, @PathVariable String studentId) {
-        try {
-            courseService.enrollStudentInCourse(courseId, studentId);
-            return ResponseEntity.ok("Student enrolled successfully.");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    /**
-     * Remove a student from a course.
-     */
-    @DeleteMapping("/{courseId}/remove/{studentId}")
-    public ResponseEntity<?> removeStudent(@PathVariable String courseId, @PathVariable String studentId) {
-        try {
-            courseService.removeStudentFromCourse(courseId, studentId);
-            return ResponseEntity.ok("Student removed from course.");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            response.setMessage(e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 }
