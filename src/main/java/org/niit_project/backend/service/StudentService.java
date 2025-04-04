@@ -20,6 +20,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -54,15 +55,21 @@ public class StudentService {
 
     private Counselor getFreeCounselor() throws Exception{
 
-        var matchOperation = Aggregation.match(Criteria.where("role").in("counselor"));
-        var addFieldsOperation = Aggregation.addFields().addField("menteesCount").withValueOfExpression("{$size: '$mentees'}").build();
+        var matchOperation = Aggregation.match(Criteria.where("role").is("counselor"));
+//        var addFieldsOperation = Aggregation.addFields().addField("menteesCount").withValueOfExpression("{$size: '$mentees'}").build();
 
         // Put the more busy counselors on top
-        var sortOperation = Aggregation.sort(Sort.Direction.DESC, "menteesCount");
+//        var sortOperation = Aggregation.sort(Sort.Direction.DESC, "menteesCount");
 
-        var aggregation = Aggregation.newAggregation(matchOperation, addFieldsOperation, sortOperation);
+        var aggregation = Aggregation.newAggregation(matchOperation);
 
         var results = mongoTemplate.aggregate(aggregation, "admins", Counselor.class).getMappedResults();
+        var counselors = new ArrayList<>(results.stream().peek(counselor -> {
+            var studentMatchAggregation = Aggregation.match(Criteria.where("counselor").is(counselor.getId()));
+            var mentees = mongoTemplate.aggregate(Aggregation.newAggregation(studentMatchAggregation), "students", Student.class).getMappedResults();
+            counselor.setMentees(new ArrayList<>(mentees));
+        }).toList());
+        counselors.sort((o1, o2) -> o2.getMentees().size() - o1.getMentees().size());
 
         if(results.isEmpty()){
             throw new Exception("There are no counselors yet");
@@ -70,7 +77,7 @@ public class StudentService {
 
 
         // To get the free-est counselor
-        return results.get(results.size()-1);
+        return counselors.get(counselors.size()-1);
     }
 
     public Student registerStudent(@Valid Student student) throws Exception {
