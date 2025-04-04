@@ -122,7 +122,8 @@ public class StudentService {
         notification.setTimestamp(LocalDateTime.now());
         notification.setRecipients(List.of(savedStudent.getId()));
         notification.setTarget(savedStudent.getId());
-        notificationService.sendPushNotification(notification);
+        // For Now because of Push Notifs not being done in the app. We'll comment this,
+//        notificationService.sendPushNotification(notification);
 
 
         // Once the user has been saved with this counselor, we update it on the counselors end as well
