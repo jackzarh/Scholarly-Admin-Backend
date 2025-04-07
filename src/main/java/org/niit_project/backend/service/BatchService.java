@@ -1,5 +1,6 @@
 package org.niit_project.backend.service;
 
+import org.niit_project.backend.dto.ApiResponse;
 import org.niit_project.backend.entities.Admin;
 import org.niit_project.backend.entities.Course;
 import org.niit_project.backend.entities.Student;
@@ -62,6 +63,9 @@ public class BatchService {
         if(batch.getTimetable() == null || batch.getTimetable().isEmpty()){
             throw new Exception("Timetable cannot be null");
         }
+        if(batch.getMembers() == null ){
+            throw new Exception("Members cannot be null");
+        }
         if (batch.getStartPeriod() == null) {
             throw new Exception("Start Period cannot be null");
         }
@@ -77,12 +81,40 @@ public class BatchService {
             throw new ApiException("Only counselors and managers can create batches", HttpStatus.UNAUTHORIZED);
         }
         var faculty = adminRepository.findById(adminId).orElseThrow(() -> new ApiException("Faculty does not exist", HttpStatus.NOT_FOUND));
+        var savedBatch = batchRepository.save(batch);
 
-        return batchRepository.save(batch);
+        // Send the batch to the general batches websocket as well as the batch's faculty and student's batches websocket.
+        var fullBatch = getOneBatch(savedBatch.getId());
+        var response = new ApiResponse("Created Batch", fullBatch);
+        messagingTemplate.convertAndSend("/batches", response);
+        messagingTemplate.convertAndSend("/my-batches/"+facultyId, response);
+        for(var member : batch.getMembers()){
+            messagingTemplate.convertAndSend("/my-batches/"+member.toString(), response);
+        }
+        return savedBatch;
     }
 
     public List<Batch> getAllBatches() {
-        return batchRepository.findAll(Sort.by(Sort.Direction.DESC, "startPeriod"));
+        var _batches = batchRepository.findAll(Sort.by(Sort.Direction.DESC, "startPeriod"));
+        return _batches.stream().peek(batch -> {
+            // We set the batch's faculty,
+            batch.setFaculty(User.fromAdmin(adminRepository.findById(batch.getFaculty().toString()).orElse(null)));
+
+            // We set the batch's course,
+            var courseQuery = Query.query(Criteria.where("_id").is(batch.getCourse().toString()));
+            var course = mongoTemplate.findOne(courseQuery,  Course.class, "courses");
+            batch.setCourse(course);
+
+            // Finally We Get and Set the full details of the all the members
+            var match = Aggregation.match(Criteria.where("_id").in(batch.getMembers()));
+            var sort = Aggregation.sort(Sort.Direction.DESC, "createdAt");
+            var aggregation = Aggregation.newAggregation(match, sort);
+            var results = mongoTemplate.aggregate(aggregation, "students", Student.class).getMappedResults();
+            var students = results.stream().map(User::fromStudent).toList();
+            var paidStudents = students.stream().filter(user -> batch.getPaidMembers().contains(user.getId())).toList();
+            batch.setMembers(new ArrayList<>(students));
+            batch.setPaidMembers(new ArrayList<>(paidStudents));
+        }).toList();
     }
 
     public Batch getOneBatch(String id) throws Exception{

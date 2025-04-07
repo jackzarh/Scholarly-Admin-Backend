@@ -17,7 +17,7 @@ public class Course {
     private String id;
     private String courseName;
     private String courseDescription;
-    private String courseProfile;
+    private String coursePhoto;
     private Long recommendedPrice;
 
     @Transient
@@ -54,12 +54,12 @@ public class Course {
         this.courseDescription = courseDescription;
     }
 
-    public String getCourseProfile() {
-        return courseProfile;
+    public String getCoursePhoto() {
+        return coursePhoto;
     }
 
-    public void setCourseProfile(String courseProfile) {
-        this.courseProfile = courseProfile;
+    public void setCoursePhoto(String coursePhoto) {
+        this.coursePhoto = coursePhoto;
     }
 
     public Long getRecommendedPrice() {

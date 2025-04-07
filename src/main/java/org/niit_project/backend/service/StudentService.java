@@ -146,6 +146,20 @@ public class StudentService {
         return savedStudent;
     }
 
+    public List<Student> getStudents() throws Exception{
+        var students = studentRepository.findAll();
+
+        return students.stream().peek(student -> {
+            var matchOperation = Aggregation.match(Criteria.where("_id").is(student.getCounselor()));
+            var aggregation = Aggregation.newAggregation(matchOperation);
+            var results = mongoTemplate.aggregate(aggregation, "admins", Counselor.class).getMappedResults();
+            if(!results.isEmpty()){
+                student.setCounselor(results.get(0));
+            }
+        }).toList();
+
+    }
+
     public boolean isStudent(String studentId){
         return studentRepository.existsById(studentId);
     }

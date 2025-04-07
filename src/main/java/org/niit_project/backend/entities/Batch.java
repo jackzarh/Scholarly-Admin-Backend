@@ -54,15 +54,15 @@ public class Batch {
     }
 
     public List<Object> getMembers() {
-        return members;
+        return members==null? List.of(): members;
     }
 
     public List<Days> getTimetable() {
-        return timetable;
+        return timetable == null? List.of(): timetable;
     }
 
     public List<Object> getPaidMembers() {
-        return paidMembers;
+        return paidMembers == null? List.of(): paidMembers;
     }
 
     public void setPaidMembers(List<Object> paidMembers) {

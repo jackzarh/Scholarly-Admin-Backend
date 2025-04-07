@@ -28,13 +28,13 @@ public class CloudinaryService {
         );
         var urls = cloudinary.uploader().upload(file.getBytes(), params);
 
-        return urls.get("secured_url").toString();
+        return urls.get("secure_url").toString();
     }
 
     public String uploadFile(MultipartFile file, Map<String, Object> params) throws Exception{
         var urls = cloudinary.uploader().upload(file.getBytes(), params);
 
-        return urls.get("secured_url").toString();
+        return urls.get("secure_url").toString();
     }
 
     public String uploadFile(File file, AttachmentType type) throws Exception{
@@ -47,12 +47,12 @@ public class CloudinaryService {
         );
         var urls = cloudinary.uploader().upload(file, params);
 
-        return urls.get("secured_url").toString();
+        return urls.get("secure_url").toString();
     }
 
     public String uploadFile(File file, Map<String, Object> params) throws Exception{
         var urls = cloudinary.uploader().upload(file, params);
 
-        return urls.get("secured_url").toString();
+        return urls.get("secure_url").toString();
     }
 }

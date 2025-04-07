@@ -5,12 +5,14 @@ package org.niit_project.backend.service;
 import io.getstream.models.UpdateUsersRequest;
 import io.getstream.services.framework.StreamSDKClient;
 import jakarta.validation.Valid;
+import org.niit_project.backend.dto.ApiResponse;
 import org.niit_project.backend.entities.*;
 import org.niit_project.backend.enums.Colors;
 import org.niit_project.backend.enums.NotificationCategory;
 import org.niit_project.backend.models.StreamUser;
 import org.niit_project.backend.repository.AdminRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +31,9 @@ public class AdminService {
 
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     @Autowired
     private StreamSDKClient client;
@@ -77,18 +82,12 @@ public class AdminService {
         return adminRepository.findByEmail(email);
     }
 
-    public Optional<List<Admin>> getAllAdmins(){
-        try{
-            var allAdmins = adminRepository.findAll();
+    public List<Admin> getAllAdmins() throws Exception{
+        var allAdmins = adminRepository.findAll();
 
-            // We sort the admins in order of their created date
-            allAdmins.sort((o1, o2) -> {
-                return o2.getCreatedAt().compareTo(o1.getCreatedAt());
-            });
-            return Optional.of(allAdmins);
-        } catch (Exception e) {
-            return Optional.empty();
-        }
+        // We sort the admins in order of their created date
+        allAdmins.sort((o1, o2) -> o2.getCreatedAt().compareTo(o1.getCreatedAt()));
+        return allAdmins;
     }
 
     public Optional<Admin> registerUser(@Valid Admin admin) {
@@ -98,6 +97,9 @@ public class AdminService {
         admin.setColor(Colors.getRandomColor());
         try{
             final Admin savedAdmin = adminRepository.save(admin);
+            var response = new ApiResponse("Updated Admin", savedAdmin);
+            messagingTemplate.convertAndSend("/admins", response);
+
             savedAdmin.setToken(generateToken(savedAdmin.getId()));
 
             // We also create a Stream Account for the user
@@ -171,6 +173,10 @@ public class AdminService {
             return Optional.empty();
         }
 
+        var response = new ApiResponse("Updated Admin", savedAdmin);
+        messagingTemplate.convertAndSend("/admins", response);
+
+
 
         return Optional.of(savedAdmin);
     }
@@ -201,9 +207,13 @@ public class AdminService {
         var queriedAdmin = gottenAdmin.get();
 
         queriedAdmin.setProfile(url);
+        var savedAdmin = adminRepository.save(queriedAdmin);
+
+        var response = new ApiResponse("Updated Admin", savedAdmin);
+        messagingTemplate.convertAndSend("/admins", response);
 
 
-        return Optional.of(adminRepository.save(queriedAdmin));
+        return Optional.of(savedAdmin);
     }
 
     public String generateToken(String userId) throws Exception{

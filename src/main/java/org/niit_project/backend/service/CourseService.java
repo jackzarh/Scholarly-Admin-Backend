@@ -9,7 +9,6 @@ import org.niit_project.backend.models.ApiException;
 import org.niit_project.backend.models.Delete;
 import org.niit_project.backend.models.User;
 import org.niit_project.backend.repository.CourseRepository;
-import org.niit_project.backend.repository.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
@@ -23,7 +22,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class CourseService {
@@ -57,7 +55,7 @@ public class CourseService {
         if(course.getCourseDescription() == null){
             throw new ApiException("Course description cannot be null", HttpStatus.BAD_REQUEST);
         }
-        if(course.getCourseProfile() == null){
+        if(course.getCoursePhoto() == null){
             throw new ApiException("Course profile cannot be null", HttpStatus.BAD_REQUEST);
         }
         if(course.getRecommendedPrice() == null){
@@ -88,7 +86,7 @@ public class CourseService {
         if(course.getCourseDescription() == null){
             throw new ApiException("Course description cannot be null", HttpStatus.BAD_REQUEST);
         }
-        if(course.getCourseProfile() == null){
+        if(course.getCoursePhoto() == null){
             throw new ApiException("Course profile cannot be null", HttpStatus.BAD_REQUEST);
         }
         if(course.getRecommendedPrice() == null){
@@ -99,7 +97,7 @@ public class CourseService {
         }
 
         var profileUrl = cloudinaryService.uploadFile(file, AttachmentType.image);
-        course.setCourseProfile(profileUrl);
+        course.setCoursePhoto(profileUrl);
 
 
 
@@ -173,7 +171,7 @@ public class CourseService {
         var course = courseRepository.findById(courseId).orElseThrow(() -> new ApiException("Course not found", HttpStatus.NOT_FOUND));
 
         var profileUrl = cloudinaryService.uploadFile(file, AttachmentType.image);
-        course.setCourseProfile(profileUrl);
+        course.setCoursePhoto(profileUrl);
         var savedCourse = courseRepository.save(course);
 
         var response = new ApiResponse();

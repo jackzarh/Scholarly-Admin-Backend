@@ -37,19 +37,20 @@ public class AdminController {
 
     @GetMapping("/getAllAdmins")
     public ResponseEntity<ApiResponse> getAllAdmins(){
-        var allAdmins = adminService.getAllAdmins();
+        var response = new ApiResponse();
 
-        if(allAdmins.isPresent()){
-            var response = new ApiResponse();
+        try{
+            var allAdmins = adminService.getAllAdmins();
             response.setMessage("Gotten All Admins");
             response.setData(allAdmins);
 
             return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            response.setMessage(e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
 
-        var response = new ApiResponse();
-        response.setMessage("Error getting admins");
-        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+
     }
 
     @PatchMapping("/updateAdmin/{id}")
