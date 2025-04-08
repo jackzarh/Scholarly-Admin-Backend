@@ -16,12 +16,20 @@ public class PaymentRequest {
     private String id;
 
     private Object issuer;
+    private Object batch;
 
     private PaymentType type;
     private PaymentStatus status;
     private String receipt;
     private LocalDateTime dateSubmitted;
 
+    public Object getBatch() {
+        return batch;
+    }
+
+    public void setBatch(Object batch) {
+        this.batch = batch;
+    }
 
     public String getId() {
         return id;

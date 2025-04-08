@@ -42,7 +42,7 @@ public class MenteeService {
         }
 
         // Create Aggregation Operations
-        var match = Aggregation.match(Criteria.where("counselorId").is(counselorId));
+        var match = Aggregation.match(Criteria.where("counselor").is(counselorId));
         var sort = Aggregation.sort(Sort.Direction.DESC, "createdAt");
         var aggregation = Aggregation.newAggregation(match, sort);
 
