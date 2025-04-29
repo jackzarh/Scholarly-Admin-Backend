@@ -103,9 +103,7 @@ public class MeetService {
 
     public Meet addUserToCall (String callID, String userId) throws Exception{
         var meet = meetRepo.findById(callID).orElseThrow(() -> new ApiException("Meet doesn't exist", HttpStatus.NOT_FOUND));
-        if(meet.getParticipants().contains(userId)){
-            throw new ApiException("User is already in call", HttpStatus.CONFLICT);
-        }
+
 
         var call = new Call("default", callID, client.video());
         //Update the call
@@ -118,7 +116,10 @@ public class MeetService {
 
 
         var participants = new ArrayList<>(meet.getParticipants());
-        participants.add(userId);
+        if(!meet.getParticipants().contains(userId)){
+            participants.add(userId);
+        }
+
         meet.setParticipants(participants);
 
         var savedMeet = meetRepo.save(meet);
@@ -150,20 +151,20 @@ public class MeetService {
                 .Ring(true).Notify(true).build());
 
 
-        var participants = new ArrayList<>(meet.getParticipants());
-        participants.remove(userId);
-        meet.setParticipants(participants);
+//        var participants = new ArrayList<>(meet.getParticipants());
+//        participants.remove(userId);
+//        meet.setParticipants(participants);
+//
+//        var savedMeet = meetRepo.save(meet);
+//        var response = new ApiResponse<Meet>();
+//        response.setMessage("Someone was removed from the call");
+//        response.setData(savedMeet);
+//
+//        for(var participant: participants){
+//            messagingTemplate.convertAndSend("/meets/"+participant, response);
+//        }
 
-        var savedMeet = meetRepo.save(meet);
-        var response = new ApiResponse<Meet>();
-        response.setMessage("Someone was removed from the call");
-        response.setData(savedMeet);
-
-        for(var participant: participants){
-            messagingTemplate.convertAndSend("/meets/"+participant, response);
-        }
-
-        return savedMeet;
+        return meet;
 
     }
 
@@ -252,7 +253,8 @@ public class MeetService {
         return meet;
     }
 
-    public void listCalls(){
-
+    public List<Meet> listCalls(String userId){
+        var criteria = Criteria.where("participants").in(userId);
+        return mongoTemplate.find(Query.query(criteria), Meet.class,"meets");
     }
 }
