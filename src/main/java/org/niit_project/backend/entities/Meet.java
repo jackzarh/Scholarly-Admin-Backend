@@ -1,6 +1,7 @@
 package org.niit_project.backend.entities;
 
 import lombok.Data;
+import org.niit_project.backend.enums.MeetStatus;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -17,13 +18,14 @@ public class Meet {
     private String id;
     private String sourceId;
     private String callerId;
-    private MeetType type;  //  channel, dm
+    private MeetType type;
+    private MeetStatus status;
 
     private LocalDateTime startDate;
 
     private LocalDateTime endDate;
 
-    private List<String> participants;
+    private List<String> participants, listeners;
 
     public String getId() {
         return id;
@@ -79,5 +81,21 @@ public class Meet {
 
     public void setParticipants(List<String> participants) {
         this.participants = participants;
+    }
+
+    public MeetStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(MeetStatus status) {
+        this.status = status;
+    }
+
+    public List<String> getListeners() {
+        return listeners;
+    }
+
+    public void setListeners(List<String> listeners) {
+        this.listeners = listeners;
     }
 }

@@ -105,8 +105,8 @@ public class ChatService {
 //        chat.setSenderProfile(member.getProfile());
         chat.setReadReceipt(List.of(senderId));
 
-        var savedChat = chatRepository.save(chat);
 
+        var savedChat = chatRepository.save(chat);
         /// To update the websocket that a new chat has been added
         var chatsResponse = new ApiResponse("Sent Chats", savedChat);
         messagingTemplate.convertAndSend("/chats/" + dmId, chatsResponse);

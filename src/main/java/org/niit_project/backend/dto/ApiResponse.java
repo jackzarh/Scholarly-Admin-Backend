@@ -10,14 +10,14 @@ package org.niit_project.backend.dto;
  *
  * @author Teninlanimi Taiwo
  */
-public class ApiResponse {
+public class ApiResponse<T> {
     private String message;
-    private Object data;
+    private T data;
 
     // Empty Constructor
     public ApiResponse(){}
 
-    public ApiResponse(String message, Object data) {
+    public ApiResponse(String message, T data) {
         this.message = message;
         this.data = data;
     }
@@ -30,11 +30,11 @@ public class ApiResponse {
         this.message = message;
     }
 
-    public Object getData() {
+    public T getData() {
         return data;
     }
 
-    public void setData(Object data) {
+    public void setData(T data) {
         this.data = data;
     }
 }
