@@ -5,10 +5,7 @@ import io.getstream.models.*;
 import io.getstream.services.Call;
 import io.getstream.services.framework.StreamSDKClient;
 import org.niit_project.backend.dto.ApiResponse;
-import org.niit_project.backend.entities.Admin;
-import org.niit_project.backend.entities.Chat;
-import org.niit_project.backend.entities.Meet;
-import org.niit_project.backend.entities.Student;
+import org.niit_project.backend.entities.*;
 import org.niit_project.backend.enums.MeetStatus;
 import org.niit_project.backend.enums.MeetType;
 import org.niit_project.backend.enums.MessageType;
@@ -52,7 +49,7 @@ public class MeetService {
     public Meet createCall(String dmId, String creatorId) throws Exception {
         // Generating random call dmId token
         var callID  = UUID.randomUUID().toString();
-        var participants = getCallParticipants(dmId);
+        var participants = getCallParticipants(dmId, creatorId);
 
         // Creating StreamSDK Call
         var call = new Call("default", callID, client.video());
@@ -103,12 +100,12 @@ public class MeetService {
 
     public Meet addUserToCall (String callID, String userId) throws Exception{
         var meet = meetRepo.findById(callID).orElseThrow(() -> new ApiException("Meet doesn't exist", HttpStatus.NOT_FOUND));
-
+        var dm = mongoTemplate.findOne(Query.query(Criteria.where("_id").is(meet.getSourceId())), DirectMessage.class,"direct messages");
 
         var call = new Call("default", callID, client.video());
         //Update the call
         call.updateCallMembers(UpdateCallMembersRequest.builder()
-                        .updateMembers(getMembers(List.of(userId)))
+                        .updateMembers(getMembers(List.of(userId), meet.getCallerId(),  dm.getCommunity() == null))
                 .build());
         //Ring again
         call.get(GetCallRequest.builder()
@@ -168,7 +165,7 @@ public class MeetService {
 
     }
 
-    private List<MemberRequest> getMembers(List<String> userIds) {
+    private List<MemberRequest> getMembers(List<String> userIds, String creatorId,boolean isDM) {
         var students = mongoTemplate.find(Query.query(Criteria.where("_id").in(userIds)), Student.class ,"students");
         var admins = mongoTemplate.find(Query.query(Criteria.where("_id").in(userIds)), Admin.class ,"admins");
 
@@ -177,20 +174,36 @@ public class MeetService {
         members.addAll(admins.stream().map(User::fromAdmin).toList());
 
 
-        return members.stream().map(user -> MemberRequest.builder().userID(user.getId()).role(user.getRole().name()).custom(Map.of("color", user.getColor(), "firstName", user.getFirstName(), "lastName", user.getLastName(), "profile", user.getProfile())).build()).toList();
+        return members.stream().map(user -> MemberRequest.builder().userID(user.getId()).role(isDM? "admin" : Objects.equals(creatorId, user.getId()) || user.getRole() == User.MemberRole.admin? "admin" : "user").custom(getCallUser(user)).build()).toList();
     }
 
-    private List<MemberRequest> getCallParticipants(String id) throws Exception{
+    private List<MemberRequest> getCallParticipants(String id, String creatorId) throws Exception{
         var callDM = directMessageService.getOneDirectMessage(id);
         if(callDM == null){
             throw new ApiException("DM not found", HttpStatus.NOT_FOUND);
         }
+        var isDM = callDM.getCommunity() == null;
 
         var members = new ArrayList<>(callDM.getRecipients().stream().map(o -> (User)o).toList());
-        List<MemberRequest> list = members.stream().map(user -> MemberRequest.builder().userID(user.getId()).role(user.getRole().name()).custom(Map.of("color", user.getColor(), "firstName", user.getFirstName(), "lastName", user.getLastName(), "profile", user.getProfile())).build()).toList();
+        List<MemberRequest> list = members.stream().map(user -> MemberRequest.builder()
+                .userID(user.getId())
+                .role(isDM? "admin" : Objects.equals(creatorId, user.getId()) || user.getRole() == User.MemberRole.admin? "admin" : "user")
+                .custom(getCallUser(user))
+                .build())
+                .toList();
 
 
         return list;
+    }
+
+    private Map<String, Object> getCallUser(User user){
+        Map<String, Object> customMap = new HashMap<>();
+        customMap.put("color", user.getColor());
+        customMap.put("firstName", user.getFirstName());
+        customMap.put("lastName", user.getLastName());
+        customMap.put("profile", user.getProfile());
+
+        return customMap;
     }
 
     public Meet endCall(String callId, String userId) throws Exception{

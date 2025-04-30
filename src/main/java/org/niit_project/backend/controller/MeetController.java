@@ -1,5 +1,6 @@
 package org.niit_project.backend.controller;
 
+import io.getstream.exceptions.StreamException;
 import org.niit_project.backend.dto.ApiResponse;
 import org.niit_project.backend.entities.Meet;
 import org.niit_project.backend.models.ApiException;
@@ -27,7 +28,11 @@ public class MeetController {
             response.setData(createdMeet);
             return ResponseEntity.ok(response);
 
-        } catch (ApiException e) {
+        } catch (StreamException e) {
+            response.setMessage(e.getResponseData().getMessage());
+            return new ResponseEntity<>(response, HttpStatusCode.valueOf(e.getResponseData().getStatusCode()));
+        }
+        catch (ApiException e) {
             response.setMessage(e.getMessage());
             return new ResponseEntity<>(response, e.getStatusCode());
         }
@@ -119,7 +124,7 @@ public class MeetController {
     }
 
     @PostMapping("/endMeet/{meetId}/{userId}")
-    public ResponseEntity<ApiResponse<Meet>> endMeet(@PathVariable String meetId, @PathVariable String userId){
+    public ResponseEntity<ApiResponse<Meet>> endMeet(@PathVariable String meetId, @PathVariable String userId)  {
         var response = new ApiResponse<Meet>();
 
         try{
