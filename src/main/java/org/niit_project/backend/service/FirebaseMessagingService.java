@@ -14,6 +14,9 @@ public class FirebaseMessagingService {
         var notification = notif.toFirebaseNotification();
         Message message = Message.builder()
                 .setNotification(notification)
+                .setAndroidConfig(androidConfig())
+                .setWebpushConfig(webConfig(notif))
+                .setApnsConfig(iOSConfig())
                 .setToken(token)
                 .build();
 
@@ -27,6 +30,9 @@ public class FirebaseMessagingService {
         var notification = notif.toFirebaseNotification();
         MulticastMessage message = MulticastMessage.builder()
                 .setNotification(notification)
+                .setAndroidConfig(androidConfig())
+                .setWebpushConfig(webConfig(notif))
+                .setApnsConfig(iOSConfig())
                 .addAllTokens(tokens)
                 .build();
 
@@ -42,6 +48,9 @@ public class FirebaseMessagingService {
         var message = Message.builder()
                 .setNotification(notification)
                 .setTopic(notif.getTarget())
+                .setAndroidConfig(androidConfig())
+                .setWebpushConfig(webConfig(notif))
+                .setApnsConfig(iOSConfig())
                 .build();
 
         var sentMessage = FirebaseMessaging.getInstance().send(message);
@@ -49,5 +58,27 @@ public class FirebaseMessagingService {
 
         return sentMessage;
 
+    }
+
+    private AndroidConfig androidConfig(){
+        return AndroidConfig.builder()
+                .setPriority(AndroidConfig.Priority.HIGH)
+                .build();
+    }
+
+    private ApnsConfig iOSConfig(){
+        return ApnsConfig.builder()
+                .setAps(Aps.builder()
+                        .setContentAvailable(true)
+                        .setSound("default")
+                        .build())
+                .build();
+    }
+
+
+    private WebpushConfig webConfig(org.niit_project.backend.entities.Notification notification){
+        return WebpushConfig.builder()
+                .setNotification(new WebpushNotification(notification.getTitle(), notification.getContent(), notification.getImage()))
+                .build();
     }
 }
