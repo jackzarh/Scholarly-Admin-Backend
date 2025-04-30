@@ -1,5 +1,7 @@
 package org.niit_project.backend.service;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.messaging.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -7,7 +9,10 @@ import java.util.List;
 @Service
 public class FirebaseMessagingService {
 
-    /// NOTE: SOme of the Notification Objects may not hae ID's _id.
+    @Autowired
+    private FirebaseMessaging firebaseMessaging;
+
+    /// NOTE: Some of the Notification Objects may not hae ID's _id.
     // That is, they may not have been saved as notification on the DB.
 
     public String sendNotification(org.niit_project.backend.entities.Notification notif, String token) throws Exception {
@@ -20,7 +25,7 @@ public class FirebaseMessagingService {
                 .setToken(token)
                 .build();
 
-        var sentMessage = FirebaseMessaging.getInstance().send(message);
+        var sentMessage = firebaseMessaging.send(message);
         System.out.println(sentMessage);
 
         return sentMessage;
@@ -36,7 +41,7 @@ public class FirebaseMessagingService {
                 .addAllTokens(tokens)
                 .build();
 
-        var sentMessage = FirebaseMessaging.getInstance().sendEachForMulticast(message);
+        var sentMessage = firebaseMessaging.sendEachForMulticast(message);
         System.out.println(sentMessage);
 
         return sentMessage;
@@ -53,7 +58,7 @@ public class FirebaseMessagingService {
                 .setApnsConfig(iOSConfig())
                 .build();
 
-        var sentMessage = FirebaseMessaging.getInstance().send(message);
+        var sentMessage = firebaseMessaging.send(message);
         System.out.println(sentMessage);
 
         return sentMessage;

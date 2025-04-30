@@ -3,6 +3,7 @@ package org.niit_project.backend.config;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.messaging.FirebaseMessaging;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,5 +30,10 @@ public class FirebaseConfig {
 
         return FirebaseApp.initializeApp(options);
 
+    }
+
+    @Bean
+    public FirebaseMessaging firebaseMessaging() throws IOException{
+        return FirebaseMessaging.getInstance(firebaseApp());
     }
 }
