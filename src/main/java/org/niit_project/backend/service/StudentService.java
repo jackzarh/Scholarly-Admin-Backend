@@ -209,8 +209,8 @@ public class StudentService {
 //        tokenUtil.setSecretKey(env.get("STREAM_API_SECRET"));
 //        return tokenUtil.generateToken(userId);
 
-        // 24 hour expiration
-        return client.tokenBuilder().createToken(userId, 60 * 60 * 24);
+        // 4 months expiration
+        return client.tokenBuilder().createToken(userId, 60 * 60 * 24 * 7 * 20);
 
 
 //        try {

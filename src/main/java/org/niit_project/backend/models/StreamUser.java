@@ -6,6 +6,7 @@ import org.niit_project.backend.enums.Colors;
 import org.springframework.data.annotation.Transient;
 
 import java.util.Map;
+import java.util.Objects;
 
 @Data
 public class StreamUser {
@@ -67,7 +68,7 @@ public class StreamUser {
                 .id(id)
                 .name(name)
                 .image(image)
-                .role(role.toLowerCase())
+                .role(Objects.equals(role, "admin") ? "admin": "user")
                 .custom(Map.of("color",custom.getColor().name().toLowerCase())).build();
     }
 
