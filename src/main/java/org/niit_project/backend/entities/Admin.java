@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.niit_project.backend.enums.AdminRole;
 import org.niit_project.backend.enums.Colors;
+import org.niit_project.backend.enums.Language;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -48,6 +49,9 @@ public class Admin {
     private LocalDateTime createdAt;
 
     private Colors color;
+
+    @NotNull
+    private Language preferredLanguage = Language.ENGLISH_UK; //setting default language to English (UK)
 
     public Colors getColor() {
         return color == null? Colors.getRandomColor(): color;
@@ -158,5 +162,17 @@ public class Admin {
 
     public void setOnline(boolean online) {
         this.online = online;
+    }
+
+    public Admin(Language preferredLanguage) {
+        this.preferredLanguage = preferredLanguage;
+    }
+
+    public Language getPreferredLanguage() {
+        return preferredLanguage;
+    }
+
+    public void setPreferredLanguage(Language preferredLanguage) {
+        this.preferredLanguage = preferredLanguage;
     }
 }

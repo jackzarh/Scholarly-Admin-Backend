@@ -35,10 +35,12 @@ public class FeedbackService {
     @Autowired
     private MongoTemplate mongoTemplate;
 
+    @Autowired private FeedbackSettingService feedbackSettingService;
+
     public Feedback createFeedback(Feedback feedback) throws Exception {
-        if (feedback == null) {
-            throw new IllegalArgumentException("Feedback must not be null");
-        }
+        String studentId = feedback.getReporter().toString();
+        String facultyId = feedback.getPerpetrator().toString();
+        feedbackSettingService.checkAllowed(facultyId, studentId);
 
         feedback.setCreatedAt(LocalDateTime.now());
 
@@ -49,6 +51,11 @@ public class FeedbackService {
         var savedFeedback = feedbackRepository.save(feedback);
 
         messagingTemplate.convertAndSend("/feedbacks", new ApiResponse("Created Feedback successfully", getOneFeedback(savedFeedback.getId())));
+
+
+        //Broadcasting the student's feedback of Faculty to Manager and Counselors
+        messagingTemplate.convertAndSend("/announcements/manager", new ApiResponse("New feedback successfully broadcast to Manager", feedback));
+        messagingTemplate.convertAndSend("/announcements/counselor", new ApiResponse("New feedback successfully broadcast to Counselor", feedback));
 
         return savedFeedback;
     }

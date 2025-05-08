@@ -3,6 +3,7 @@ package org.niit_project.backend.entities;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.niit_project.backend.enums.Colors;
+import org.niit_project.backend.enums.Language;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -48,6 +49,9 @@ public class Student {
 
 
     private Object counselor;
+
+    private Language preferredLanguage = Language.ENGLISH_UK; //setting default language to English (UK)
+
 
     public Student(){}
 
@@ -158,5 +162,17 @@ public class Student {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public Student(Language preferredLanguage) {
+        this.preferredLanguage = preferredLanguage;
+    }
+
+    public Language getPreferredLanguage() {
+        return preferredLanguage;
+    }
+
+    public void setPreferredLanguage(Language preferredLanguage) {
+        this.preferredLanguage = preferredLanguage;
     }
 }
